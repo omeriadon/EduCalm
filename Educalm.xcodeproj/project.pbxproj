@@ -6,6 +6,12 @@
 	objectVersion = 77;
 	objects = {
 
+/* Begin PBXBuildFile section */
+		A75202B52E545A11005EEF09 /* Defaults in Frameworks */ = {isa = PBXBuildFile; productRef = A75202B42E545A11005EEF09 /* Defaults */; };
+		A75202B72E545A11005EEF09 /* DefaultsMacros in Frameworks */ = {isa = PBXBuildFile; productRef = A75202B62E545A11005EEF09 /* DefaultsMacros */; };
+		A75202C82E545CEB005EEF09 /* ColorfulX in Frameworks */ = {isa = PBXBuildFile; productRef = A75202C72E545CEB005EEF09 /* ColorfulX */; };
+/* End PBXBuildFile section */
+
 /* Begin PBXFileReference section */
 		A75202A32E545826005EEF09 /* Educalm.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = Educalm.app; sourceTree = BUILT_PRODUCTS_DIR; };
 /* End PBXFileReference section */
@@ -23,6 +29,9 @@
 			isa = PBXFrameworksBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				A75202B52E545A11005EEF09 /* Defaults in Frameworks */,
+				A75202C82E545CEB005EEF09 /* ColorfulX in Frameworks */,
+				A75202B72E545A11005EEF09 /* DefaultsMacros in Frameworks */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -65,6 +74,9 @@
 			);
 			name = Educalm;
 			packageProductDependencies = (
+				A75202B42E545A11005EEF09 /* Defaults */,
+				A75202B62E545A11005EEF09 /* DefaultsMacros */,
+				A75202C72E545CEB005EEF09 /* ColorfulX */,
 			);
 			productName = Educalm;
 			productReference = A75202A32E545826005EEF09 /* Educalm.app */;
@@ -94,6 +106,10 @@
 			);
 			mainGroup = A752029A2E545826005EEF09;
 			minimizedProjectReferenceProxies = 1;
+			packageReferences = (
+				A75202B32E545A11005EEF09 /* XCRemoteSwiftPackageReference "Defaults" */,
+				A75202C62E545CEB005EEF09 /* XCRemoteSwiftPackageReference "ColorfulX" */,
+			);
 			preferredProjectObjectVersion = 77;
 			productRefGroup = A75202A42E545826005EEF09 /* Products */;
 			projectDirPath = "";
@@ -351,6 +367,43 @@
 			defaultConfigurationName = Release;
 		};
 /* End XCConfigurationList section */
+
+/* Begin XCRemoteSwiftPackageReference section */
+		A75202B32E545A11005EEF09 /* XCRemoteSwiftPackageReference "Defaults" */ = {
+			isa = XCRemoteSwiftPackageReference;
+			repositoryURL = "https://github.com/sindresorhus/Defaults";
+			requirement = {
+				kind = upToNextMajorVersion;
+				minimumVersion = 9.0.3;
+			};
+		};
+		A75202C62E545CEB005EEF09 /* XCRemoteSwiftPackageReference "ColorfulX" */ = {
+			isa = XCRemoteSwiftPackageReference;
+			repositoryURL = "https://github.com/Lakr233/ColorfulX.git";
+			requirement = {
+				kind = upToNextMajorVersion;
+				minimumVersion = 5.7.0;
+			};
+		};
+/* End XCRemoteSwiftPackageReference section */
+
+/* Begin XCSwiftPackageProductDependency section */
+		A75202B42E545A11005EEF09 /* Defaults */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = A75202B32E545A11005EEF09 /* XCRemoteSwiftPackageReference "Defaults" */;
+			productName = Defaults;
+		};
+		A75202B62E545A11005EEF09 /* DefaultsMacros */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = A75202B32E545A11005EEF09 /* XCRemoteSwiftPackageReference "Defaults" */;
+			productName = DefaultsMacros;
+		};
+		A75202C72E545CEB005EEF09 /* ColorfulX */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = A75202C62E545CEB005EEF09 /* XCRemoteSwiftPackageReference "ColorfulX" */;
+			productName = ColorfulX;
+		};
+/* End XCSwiftPackageProductDependency section */
 	};
 	rootObject = A752029B2E545826005EEF09 /* Project object */;
 }
