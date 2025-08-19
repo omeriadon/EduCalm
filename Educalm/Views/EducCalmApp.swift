@@ -9,11 +9,10 @@ import SwiftUI
 
 @main
 struct EduCalmApp: App {
-    var body: some Scene {
-        WindowGroup {
+	var body: some Scene {
+		WindowGroup {
 			ContentView()
 				.tint(.purple)
-
-        }
-    }
+		}
+	}
 }
