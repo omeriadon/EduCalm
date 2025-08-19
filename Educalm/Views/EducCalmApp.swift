@@ -8,10 +8,12 @@
 import SwiftUI
 
 @main
-struct EducalmApp: App {
+struct EduCalmApp: App {
     var body: some Scene {
         WindowGroup {
 			ContentView()
+				.tint(.purple)
+
         }
     }
 }
