@@ -1,0 +1,87 @@
+{
+  "fill" : {
+    "linear-gradient" : [
+      "extended-srgb:0.38039,0.33333,0.96078,1.00000",
+      "display-p3:0.22451,0.20062,0.57111,1.00000"
+    ]
+  },
+  "groups" : [
+    {
+      "blend-mode" : "hard-light",
+      "blur-material" : 0.13,
+      "layers" : [
+        {
+          "image-name" : "2e4ced2541a782a8effb49f50b9f34e5fa072cb89a4c9f63e7f16a0598453ac8.png",
+          "name" : "2e4ced2541a782a8effb49f50b9f34e5fa072cb89a4c9f63e7f16a0598453ac8",
+          "position" : {
+            "scale" : 1.75,
+            "translation-in-points" : [
+              172.1953125,
+              161.296875
+            ]
+          }
+        }
+      ],
+      "lighting" : "combined",
+      "name" : "First Aid",
+      "position" : {
+        "scale" : 1,
+        "translation-in-points" : [
+          -17.40001553245891,
+          -19.709022332974783
+        ]
+      },
+      "shadow" : {
+        "kind" : "neutral",
+        "opacity" : 0.5
+      },
+      "specular" : true,
+      "translucency" : {
+        "enabled" : true,
+        "value" : 1
+      }
+    },
+    {
+      "blur-material" : 0.5,
+      "layers" : [
+        {
+          "blend-mode" : "normal",
+          "fill" : "automatic",
+          "glass" : true,
+          "image-name" : "eb1fba60644f03eda20ca117418959e040dde183e8964d6bfd28e40f0284df1c.png",
+          "name" : "eb1fba60644f03eda20ca117418959e040dde183e8964d6bfd28e40f0284df1c",
+          "opacity" : 1,
+          "position" : {
+            "scale" : 2.09,
+            "translation-in-points" : [
+              -45.5546875,
+              -103.2734375
+            ]
+          }
+        }
+      ],
+      "name" : "Grad Cap",
+      "position" : {
+        "scale" : 1,
+        "translation-in-points" : [
+          16.316196013849417,
+          11.768866294466115
+        ]
+      },
+      "shadow" : {
+        "kind" : "layer-color",
+        "opacity" : 0.5
+      },
+      "translucency" : {
+        "enabled" : true,
+        "value" : 0.95
+      }
+    }
+  ],
+  "supported-platforms" : {
+    "circles" : [
+      "watchOS"
+    ],
+    "squares" : "shared"
+  }
+}

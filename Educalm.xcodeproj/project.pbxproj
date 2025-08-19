@@ -8,12 +8,13 @@
 
 /* Begin PBXBuildFile section */
 		A75202B52E545A11005EEF09 /* Defaults in Frameworks */ = {isa = PBXBuildFile; productRef = A75202B42E545A11005EEF09 /* Defaults */; };
-		A75202B72E545A11005EEF09 /* DefaultsMacros in Frameworks */ = {isa = PBXBuildFile; productRef = A75202B62E545A11005EEF09 /* DefaultsMacros */; };
 		A75202C82E545CEB005EEF09 /* ColorfulX in Frameworks */ = {isa = PBXBuildFile; productRef = A75202C72E545CEB005EEF09 /* ColorfulX */; };
+		A7D9194B2E547BBD0076A4DA /* Educalm.icon in Resources */ = {isa = PBXBuildFile; fileRef = A7D9194A2E547BBD0076A4DA /* Educalm.icon */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXFileReference section */
 		A75202A32E545826005EEF09 /* Educalm.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = Educalm.app; sourceTree = BUILT_PRODUCTS_DIR; };
+		A7D9194A2E547BBD0076A4DA /* Educalm.icon */ = {isa = PBXFileReference; lastKnownFileType = folder.iconcomposer.icon; path = Educalm.icon; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFileSystemSynchronizedRootGroup section */
@@ -31,7 +32,6 @@
 			files = (
 				A75202B52E545A11005EEF09 /* Defaults in Frameworks */,
 				A75202C82E545CEB005EEF09 /* ColorfulX in Frameworks */,
-				A75202B72E545A11005EEF09 /* DefaultsMacros in Frameworks */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -41,6 +41,7 @@
 		A752029A2E545826005EEF09 = {
 			isa = PBXGroup;
 			children = (
+				A7D9194A2E547BBD0076A4DA /* Educalm.icon */,
 				A75202A52E545826005EEF09 /* Educalm */,
 				A75202A42E545826005EEF09 /* Products */,
 			);
@@ -75,7 +76,6 @@
 			name = Educalm;
 			packageProductDependencies = (
 				A75202B42E545A11005EEF09 /* Defaults */,
-				A75202B62E545A11005EEF09 /* DefaultsMacros */,
 				A75202C72E545CEB005EEF09 /* ColorfulX */,
 			);
 			productName = Educalm;
@@ -125,6 +125,7 @@
 			isa = PBXResourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				A7D9194B2E547BBD0076A4DA /* Educalm.icon in Resources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -260,8 +261,9 @@
 		A75202AF2E545828005EEF09 /* Debug */ = {
 			isa = XCBuildConfiguration;
 			buildSettings = {
-				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
+				ASSETCATALOG_COMPILER_APPICON_NAME = Educalm;
 				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
+				ASSETCATALOG_COMPILER_INCLUDE_ALL_APPICON_ASSETS = YES;
 				CODE_SIGN_STYLE = Automatic;
 				CURRENT_PROJECT_VERSION = 1;
 				DEVELOPMENT_TEAM = C2HN547N49;
@@ -270,6 +272,8 @@
 				ENABLE_PREVIEWS = YES;
 				ENABLE_USER_SELECTED_FILES = readonly;
 				GENERATE_INFOPLIST_FILE = YES;
+				INFOPLIST_KEY_CFBundleDisplayName = Educalm;
+				INFOPLIST_KEY_LSApplicationCategoryType = "public.app-category.medical";
 				"INFOPLIST_KEY_UIApplicationSceneManifest_Generation[sdk=iphoneos*]" = YES;
 				"INFOPLIST_KEY_UIApplicationSceneManifest_Generation[sdk=iphonesimulator*]" = YES;
 				"INFOPLIST_KEY_UIApplicationSupportsIndirectInputEvents[sdk=iphoneos*]" = YES;
@@ -304,8 +308,9 @@
 		A75202B02E545828005EEF09 /* Release */ = {
 			isa = XCBuildConfiguration;
 			buildSettings = {
-				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
+				ASSETCATALOG_COMPILER_APPICON_NAME = Educalm;
 				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
+				ASSETCATALOG_COMPILER_INCLUDE_ALL_APPICON_ASSETS = YES;
 				CODE_SIGN_STYLE = Automatic;
 				CURRENT_PROJECT_VERSION = 1;
 				DEVELOPMENT_TEAM = C2HN547N49;
@@ -314,6 +319,8 @@
 				ENABLE_PREVIEWS = YES;
 				ENABLE_USER_SELECTED_FILES = readonly;
 				GENERATE_INFOPLIST_FILE = YES;
+				INFOPLIST_KEY_CFBundleDisplayName = Educalm;
+				INFOPLIST_KEY_LSApplicationCategoryType = "public.app-category.medical";
 				"INFOPLIST_KEY_UIApplicationSceneManifest_Generation[sdk=iphoneos*]" = YES;
 				"INFOPLIST_KEY_UIApplicationSceneManifest_Generation[sdk=iphonesimulator*]" = YES;
 				"INFOPLIST_KEY_UIApplicationSupportsIndirectInputEvents[sdk=iphoneos*]" = YES;
@@ -392,11 +399,6 @@
 			isa = XCSwiftPackageProductDependency;
 			package = A75202B32E545A11005EEF09 /* XCRemoteSwiftPackageReference "Defaults" */;
 			productName = Defaults;
-		};
-		A75202B62E545A11005EEF09 /* DefaultsMacros */ = {
-			isa = XCSwiftPackageProductDependency;
-			package = A75202B32E545A11005EEF09 /* XCRemoteSwiftPackageReference "Defaults" */;
-			productName = DefaultsMacros;
 		};
 		A75202C72E545CEB005EEF09 /* ColorfulX */ = {
 			isa = XCSwiftPackageProductDependency;
