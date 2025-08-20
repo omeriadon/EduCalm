@@ -1,15 +1,15 @@
-	//
-	//  Introsheet.swift
-	//  Educalm
-	//
-	//  Created by Adon Omeri on 19/8/2025.
-	//
+//
+//  Introsheet.swift
+//  Educalm
+//
+//  Created by Adon Omeri on 19/8/2025.
+//
 
 import ColorfulX
 import Defaults
 import SwiftUI
 
-	// MARK: - Hero Gradient
+// MARK: - Hero Gradient
 
 let heroGradient = LinearGradient(
 	colors: [.purple, .blue],
@@ -17,7 +17,7 @@ let heroGradient = LinearGradient(
 	endPoint: .bottomTrailing
 )
 
-	// MARK: - Question Input Type
+// MARK: - Question Input Type
 
 enum QuestionInputType {
 	case text
@@ -25,7 +25,7 @@ enum QuestionInputType {
 	case schoolGrade
 }
 
-	// MARK: - Onboarding Question Model
+// MARK: - Onboarding Question Model
 
 struct OnboardingQuestion {
 	let id: String
@@ -35,7 +35,7 @@ struct OnboardingQuestion {
 	let inputType: QuestionInputType
 }
 
-	// MARK: - Onboarding Question View
+// MARK: - Onboarding Question View
 
 struct OnboardingQuestionView: View {
 	let question: OnboardingQuestion
@@ -76,18 +76,18 @@ struct OnboardingQuestionView: View {
 			Spacer()
 
 			switch question.inputType {
-				case .text:
-					if question.id == "age" {
-						ageStepper
-					} else {
-						textInput
-					}
+			case .text:
+				if question.id == "age" {
+					ageStepper
+				} else {
+					textInput
+				}
 
-				case .gender:
-					genderPicker
+			case .gender:
+				genderPicker
 
-				case .schoolGrade:
-					schoolGradePicker
+			case .schoolGrade:
+				schoolGradePicker
 			}
 
 			Spacer()
@@ -190,28 +190,28 @@ struct OnboardingQuestionView: View {
 
 	private var textBinding: Binding<String> {
 		switch question.id {
-			case "name": return $userName
-			case "age": return $userAge
-			case "disabilities": return $userHasDisabilites
-			case "mentalHealth": return $userMentalHealthConcerns
-			case "professional": return $userSeeingProfessional
-			case "mood": return $userAverageMoodRating
-			case "thoughts": return $userDistressingThoughtsFrequency
-			case "friends": return $userHasFriends
-			case "motivation": return $userMotivationForMentalHealth
-			case "tracking": return $userTrackMentalStability
-			default: return .constant("")
+		case "name": return $userName
+		case "age": return $userAge
+		case "disabilities": return $userHasDisabilites
+		case "mentalHealth": return $userMentalHealthConcerns
+		case "professional": return $userSeeingProfessional
+		case "mood": return $userAverageMoodRating
+		case "thoughts": return $userDistressingThoughtsFrequency
+		case "friends": return $userHasFriends
+		case "motivation": return $userMotivationForMentalHealth
+		case "tracking": return $userTrackMentalStability
+		default: return .constant("")
 		}
 	}
 
 	private func hideKeyboard() {
-#if os(iOS)
-		UIApplication.shared.sendAction(#selector(UIResponder.resignFirstResponder), to: nil, from: nil, for: nil)
-#endif
+		#if os(iOS)
+			UIApplication.shared.sendAction(#selector(UIResponder.resignFirstResponder), to: nil, from: nil, for: nil)
+		#endif
 	}
 }
 
-	// MARK: - Onboarding Questions
+// MARK: - Onboarding Questions
 
 let onboardingQuestions: [OnboardingQuestion] = [
 	OnboardingQuestion(
@@ -300,7 +300,7 @@ let onboardingQuestions: [OnboardingQuestion] = [
 	),
 ]
 
-	// MARK: - Intro Sheet View
+// MARK: - Intro Sheet View
 
 struct IntroSheet: View {
 	@Binding var hasCompletedIntro: Bool
@@ -323,8 +323,8 @@ struct IntroSheet: View {
 							Group {
 								Text("Welcome to ")
 									.fontWeight(.light)
-								+
-								Text("EduCalm")
+									+
+									Text("EduCalm")
 									.foregroundStyle(heroGradient)
 									.fontWeight(.black)
 							}
@@ -366,122 +366,158 @@ struct IntroSheet: View {
 						.padding()
 						.scrollBounceBehavior(.basedOnSize)
 					} else {
-						TabView(selection: $currentQuestionIndex) {
-							ForEach(Array(onboardingQuestions.enumerated()), id: \.offset) { index, question in
-								ScrollView(.vertical) {
-									OnboardingQuestionView(question: question)
-										.frame(width: proxy.size.width)
+						#if os(macOS)
+							VStack {
+								HStack {
+									Button {
+										hideKeyboard()
+										withAnimation(.easeInOut(duration: 0.3)) {
+											if currentQuestionIndex > 0 {
+												currentQuestionIndex -= 1
+											} else {
+												showQuestions = false
+											}
+										}
+									} label: {
+										Label("Back", systemImage: "arrow.left")
+									}
+									.buttonStyle(.glass)
+									.controlSize(.extraLarge)
+									Spacer()
+									Text("\(currentQuestionIndex + 1) of \(onboardingQuestions.count)")
+										.animation(
+											.easeInOut(duration: 2),
+											value: currentQuestionIndex
+										)
+										.contentTransition(.numericText())
+										.font(.caption)
+										.foregroundColor(.secondary)
+									Spacer()
+									Button {
+										hideKeyboard()
+										withAnimation(.easeInOut(duration: 0.3)) {
+											if currentQuestionIndex < onboardingQuestions.count - 1 {
+												currentQuestionIndex += 1
+											} else {
+												hasCompletedIntro = true
+											}
+										}
+									} label: {
+										Group {
+											if currentQuestionIndex < onboardingQuestions.count - 1 {
+												Label("Next", systemImage: "arrow.right")
+											} else {
+												Label("Done", systemImage: "checkmark.circle")
+											}
+										}
+										.animation(.easeInOut, value: currentQuestionIndex)
+										.contentTransition(.numericText())
+									}
+									.controlSize(.extraLarge)
+									.buttonStyle(.glassProminent)
 								}
-								.scrollBounceBehavior(.basedOnSize)
-								.tag(index)
-							}
-						}
-						.tabViewStyle(.page(indexDisplayMode: .never))
-						.animation(.easeInOut(duration: 0.3), value: currentQuestionIndex)
-						.ignoresSafeArea(.all, edges: .top)
-						.toolbar {
-#if os(macOS)
-							ToolbarItem {
-								Button {
-									hideKeyboard()
-									withAnimation(.easeInOut(duration: 0.3)) {
-										if currentQuestionIndex > 0 {
-											currentQuestionIndex -= 1
+								.padding()
+								ScrollViewReader { scrollProxy in
+									ScrollView(.horizontal, showsIndicators: false) {
+										LazyHStack(spacing: 0) {
+											ForEach(0 ..< onboardingQuestions.count, id: \.self) { index in
+												OnboardingQuestionView(question: onboardingQuestions[index])
+													.frame(
+														width: proxy.size.width
+													)
+													.id(index)
+											}
 										}
 									}
-								} label: {
-									Label("Back", systemImage: "arrow.left")
+									.onChange(of: currentQuestionIndex) { index in
+										withAnimation(.easeInOut(duration: 0.3)) {
+											scrollProxy.scrollTo(index, anchor: .leading)
+										}
+									}
 								}
-								.disabled(currentQuestionIndex == 0)
+								.ignoresSafeArea(.all, edges: .top)
+								.scrollTargetBehavior(.paging)
+								.scrollPosition(id: .constant(currentQuestionIndex))
+								.scrollDisabled(true)
 							}
-
-							ToolbarSpacer(.fixed)
-
-							ToolbarItem {
-								Text("\(currentQuestionIndex + 1) of \(onboardingQuestions.count)")
-									.font(.caption)
-									.foregroundColor(.secondary)
+						#else
+							TabView(selection: $currentQuestionIndex) {
+								ForEach(0 ..< onboardingQuestions.count, id: \.self) { index in
+									ScrollView(.vertical) {
+										OnboardingQuestionView(question: onboardingQuestions[index])
+											.frame(width: proxy.size.width)
+									}
+									.tag(index)
+								}
 							}
+							.tabViewStyle(.page(indexDisplayMode: .automatic))
+							.toolbar {
+								ToolbarItem(placement: .topBarLeading) {
+									Button {
+										hideKeyboard()
+										withAnimation(.easeInOut(duration: 0.3)) {
+											if currentQuestionIndex > 0 {
+												currentQuestionIndex -= 1
+											} else {
+												showQuestions = false
+											}
+										}
+									} label: {
+										Label("Back", systemImage: "arrow.left")
+									}
+									.controlSize(.extraLarge)
+								}
 
-							ToolbarSpacer(.fixed)
+								ToolbarItem(placement: .principal) {
+									Text("\(currentQuestionIndex + 1) of \(onboardingQuestions.count)")
+										.contentTransition(.numericText())
+										.font(.caption)
+										.foregroundColor(.secondary)
+								}
 
-							ToolbarItem {
-								Button {
-									hideKeyboard()
-									withAnimation(.easeInOut(duration: 0.3)) {
+								ToolbarItem(placement: .topBarTrailing) {
+									Button {
+										hideKeyboard()
+										withAnimation(.easeInOut(duration: 0.3)) {
+											if currentQuestionIndex < onboardingQuestions.count - 1 {
+												currentQuestionIndex += 1
+											} else {
+												hasCompletedIntro = true
+											}
+										}
+									} label: {
 										if currentQuestionIndex < onboardingQuestions.count - 1 {
-											currentQuestionIndex += 1
+											Label("Next", systemImage: "arrow.right")
 										} else {
-											hasCompletedIntro = true
+											Label("Done", systemImage: "checkmark.circle")
 										}
 									}
-								} label: {
-									Label("Next", systemImage: "arrow.right")
+									.controlSize(.extraLarge)
+									.buttonStyle(.glassProminent)
 								}
-								.buttonStyle(.glassProminent)
 							}
-
-#else
-							ToolbarItem(
-								placement: .topBarLeading
-							) {
-								Button {
-									hideKeyboard()
-									withAnimation(.easeInOut(duration: 0.3)) {
-										if currentQuestionIndex > 0 {
-											currentQuestionIndex -= 1
-										}
-									}
-								} label: {
-									Label("Back", systemImage: "arrow.left")
-								}
-								.disabled(currentQuestionIndex == 0)
+							.onTapGesture {
+								hideKeyboard()
 							}
-							ToolbarItem(
-								placement: .principal
-							) {
-								Text("\(currentQuestionIndex + 1) of \(onboardingQuestions.count)")
-									.font(.caption)
-									.foregroundColor(.secondary)
-							}
-							ToolbarItem(
-								placement: .topBarTrailing
-							) {
-								Button {
-									hideKeyboard()
-									withAnimation(.easeInOut(duration: 0.3)) {
-										if currentQuestionIndex < onboardingQuestions.count - 1 {
-											currentQuestionIndex += 1
-										} else {
-											hasCompletedIntro = true
-										}
-									}
-								} label: {
-									Label("Next", systemImage: "arrow.right")
-								}
-								.buttonStyle(.glassProminent)
-							}
-
-#endif
-						}
-						.onTapGesture {
-							hideKeyboard()
-						}
+							.tabViewStyle(.page(indexDisplayMode: .never))
+							.animation(.easeInOut(duration: 0.3), value: currentQuestionIndex)
+						#endif
 					}
 				}
 			}
 		}
+
 		.interactiveDismissDisabled(true)
 		.frame(
 			minWidth: 320, idealWidth: 500, maxWidth: 600,
-			minHeight: 500, idealHeight: 700, maxHeight: 800
+			minHeight: 680, idealHeight: 700, maxHeight: 800
 		)
 	}
 
 	private func hideKeyboard() {
-#if os(iOS)
-		UIApplication.shared.sendAction(#selector(UIResponder.resignFirstResponder), to: nil, from: nil, for: nil)
-#endif
+		#if os(iOS)
+			UIApplication.shared.sendAction(#selector(UIResponder.resignFirstResponder), to: nil, from: nil, for: nil)
+		#endif
 	}
 }
 
