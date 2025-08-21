@@ -13,6 +13,10 @@ struct EduCalmApp: App {
 		WindowGroup {
 			ContentView()
 				.tint(.purple)
+			#if os(macOS)
+				.frame(width: 900, height: 700)
+			#endif
 		}
+		.windowResizability(.contentSize)
 	}
 }

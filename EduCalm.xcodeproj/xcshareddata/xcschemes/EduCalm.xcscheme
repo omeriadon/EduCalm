@@ -16,8 +16,8 @@
             <BuildableReference
                BuildableIdentifier = "primary"
                BlueprintIdentifier = "A75202A22E545826005EEF09"
-               BuildableName = "Educalm.app"
-               BlueprintName = "Educalm"
+               BuildableName = "EduCalm.app"
+               BlueprintName = "EduCalm"
                ReferencedContainer = "container:EduCalm.xcodeproj">
             </BuildableReference>
          </BuildActionEntry>
@@ -45,8 +45,8 @@
          <BuildableReference
             BuildableIdentifier = "primary"
             BlueprintIdentifier = "A75202A22E545826005EEF09"
-            BuildableName = "Educalm.app"
-            BlueprintName = "Educalm"
+            BuildableName = "EduCalm.app"
+            BlueprintName = "EduCalm"
             ReferencedContainer = "container:EduCalm.xcodeproj">
          </BuildableReference>
       </BuildableProductRunnable>
@@ -62,8 +62,8 @@
          <BuildableReference
             BuildableIdentifier = "primary"
             BlueprintIdentifier = "A75202A22E545826005EEF09"
-            BuildableName = "Educalm.app"
-            BlueprintName = "Educalm"
+            BuildableName = "EduCalm.app"
+            BlueprintName = "EduCalm"
             ReferencedContainer = "container:EduCalm.xcodeproj">
          </BuildableReference>
       </BuildableProductRunnable>

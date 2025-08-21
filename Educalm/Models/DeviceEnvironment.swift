@@ -14,7 +14,7 @@ import Foundation
 enum DeviceEnvironment {
 	static var isiPadPhone: Bool {
 		#if os(iOS)
-			return UIDevice.current.userInterfaceIdiom == .pad
+			return true
 		#else
 			return false // Not iPad on macOS, visionOS, tvOS, etc.
 		#endif

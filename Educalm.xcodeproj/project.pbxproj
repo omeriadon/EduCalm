@@ -13,14 +13,14 @@
 /* End PBXBuildFile section */
 
 /* Begin PBXFileReference section */
-		A75202A32E545826005EEF09 /* Educalm.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = Educalm.app; sourceTree = BUILT_PRODUCTS_DIR; };
+		A75202A32E545826005EEF09 /* EduCalm.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = EduCalm.app; sourceTree = BUILT_PRODUCTS_DIR; };
 		A7D9194A2E547BBD0076A4DA /* EduCalm.icon */ = {isa = PBXFileReference; lastKnownFileType = folder.iconcomposer.icon; path = EduCalm.icon; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFileSystemSynchronizedRootGroup section */
-		A75202A52E545826005EEF09 /* Educalm */ = {
+		A75202A52E545826005EEF09 /* EduCalm */ = {
 			isa = PBXFileSystemSynchronizedRootGroup;
-			path = Educalm;
+			path = EduCalm;
 			sourceTree = "<group>";
 		};
 /* End PBXFileSystemSynchronizedRootGroup section */
@@ -42,7 +42,7 @@
 			isa = PBXGroup;
 			children = (
 				A7D9194A2E547BBD0076A4DA /* EduCalm.icon */,
-				A75202A52E545826005EEF09 /* Educalm */,
+				A75202A52E545826005EEF09 /* EduCalm */,
 				A75202A42E545826005EEF09 /* Products */,
 			);
 			sourceTree = "<group>";
@@ -50,7 +50,7 @@
 		A75202A42E545826005EEF09 /* Products */ = {
 			isa = PBXGroup;
 			children = (
-				A75202A32E545826005EEF09 /* Educalm.app */,
+				A75202A32E545826005EEF09 /* EduCalm.app */,
 			);
 			name = Products;
 			sourceTree = "<group>";
@@ -58,9 +58,9 @@
 /* End PBXGroup section */
 
 /* Begin PBXNativeTarget section */
-		A75202A22E545826005EEF09 /* Educalm */ = {
+		A75202A22E545826005EEF09 /* EduCalm */ = {
 			isa = PBXNativeTarget;
-			buildConfigurationList = A75202AE2E545828005EEF09 /* Build configuration list for PBXNativeTarget "Educalm" */;
+			buildConfigurationList = A75202AE2E545828005EEF09 /* Build configuration list for PBXNativeTarget "EduCalm" */;
 			buildPhases = (
 				A752029F2E545826005EEF09 /* Sources */,
 				A75202A02E545826005EEF09 /* Frameworks */,
@@ -71,15 +71,15 @@
 			dependencies = (
 			);
 			fileSystemSynchronizedGroups = (
-				A75202A52E545826005EEF09 /* Educalm */,
+				A75202A52E545826005EEF09 /* EduCalm */,
 			);
-			name = Educalm;
+			name = EduCalm;
 			packageProductDependencies = (
 				A75202B42E545A11005EEF09 /* Defaults */,
 				A75202C72E545CEB005EEF09 /* ColorfulX */,
 			);
-			productName = Educalm;
-			productReference = A75202A32E545826005EEF09 /* Educalm.app */;
+			productName = EduCalm;
+			productReference = A75202A32E545826005EEF09 /* EduCalm.app */;
 			productType = "com.apple.product-type.application";
 		};
 /* End PBXNativeTarget section */
@@ -115,7 +115,7 @@
 			projectDirPath = "";
 			projectRoot = "";
 			targets = (
-				A75202A22E545826005EEF09 /* Educalm */,
+				A75202A22E545826005EEF09 /* EduCalm */,
 			);
 		};
 /* End PBXProject section */
@@ -289,7 +289,7 @@
 				"LD_RUNPATH_SEARCH_PATHS[sdk=macosx*]" = "@executable_path/../Frameworks";
 				MACOSX_DEPLOYMENT_TARGET = 26.0;
 				MARKETING_VERSION = 1.0;
-				PRODUCT_BUNDLE_IDENTIFIER = aids.Educalm;
+				PRODUCT_BUNDLE_IDENTIFIER = aids.EduCalm;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				REGISTER_APP_GROUPS = YES;
 				SDKROOT = auto;
@@ -337,7 +337,7 @@
 				"LD_RUNPATH_SEARCH_PATHS[sdk=macosx*]" = "@executable_path/../Frameworks";
 				MACOSX_DEPLOYMENT_TARGET = 26.0;
 				MARKETING_VERSION = 1.0;
-				PRODUCT_BUNDLE_IDENTIFIER = aids.Educalm;
+				PRODUCT_BUNDLE_IDENTIFIER = aids.EduCalm;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				REGISTER_APP_GROUPS = YES;
 				SDKROOT = auto;
@@ -366,7 +366,7 @@
 			defaultConfigurationIsVisible = 0;
 			defaultConfigurationName = Release;
 		};
-		A75202AE2E545828005EEF09 /* Build configuration list for PBXNativeTarget "Educalm" */ = {
+		A75202AE2E545828005EEF09 /* Build configuration list for PBXNativeTarget "EduCalm" */ = {
 			isa = XCConfigurationList;
 			buildConfigurations = (
 				A75202AF2E545828005EEF09 /* Debug */,
