@@ -6,6 +6,7 @@
 //
 
 import ColorfulX
+import Defaults
 import FoundationModels
 import SwiftUI
 
@@ -21,33 +22,51 @@ struct ChatTab: View {
 
 	@State var colorfulPreset = ColorfulPreset.starry
 
-	private let instructions = """
-	You must be concise and clear.
-	Stay helpful to the user's questions.
-	Do not be overly emotional, your job is to inform user only.
-	When asked a question make sure to provide some information, not just qualitative info.
+	private var instructions: String {
+		let userName = Defaults[.userName].isEmpty ? "the user" : Defaults[.userName]
+		let userAge = Defaults[.userAge].isEmpty ? "unknown age" : "\(Defaults[.userAge]) years old"
+		let userGrade = Defaults[.userSchoolGrade].title
+		let userGender = Defaults[.userGender].title.lowercased()
 
-	IMPORTANT: You are provided with device data for context only. NEVER repeat, quote, or echo back the device data structure in your response. Only use it to answer questions about the device's specifications, features, or capabilities. Answer directly without referencing the data structure format.
-	When referring to the deice use its name property.
+		return """
+		You are a mental health support AI for young people (10-25). Provide empathetic guidance, coping strategies, and safety-focused responses without diagnosing.
 
-	Use dot points when asked a question containing multiple pieces of data, such as a summary of the device or asking reasons why soemthing may be good/bad at gaming, photos, etc
-	"""
+		USER CONTEXT:
+		- Name: \(userName)
+		- Age: \(userAge)
+		- School: \(userGrade)
+		- Gender: \(userGender)
+		- Mental Health Concerns: \(Defaults[.userMentalHealthConcerns])
+		- Seeing Professional: \(Defaults[.userSeeingProfessional])
+		- Mood Rating: \(Defaults[.userAverageMoodRating])
+		- Distressing Thoughts Frequency: \(Defaults[.userDistressingThoughtsFrequency])
+		- Social Connections: \(Defaults[.userHasFriends])
+		- Motivation: \(Defaults[.userMotivationForMentalHealth])
+		- Disabilities: \(Defaults[.userHasDisabilites])
+
+		GUIDELINES:
+		- Use context to provide tailored, age-appropriate advice
+		- Validate feelings, give practical coping strategies
+		- Encourage professional help when needed
+		- Address the user naturally, concisely, safely
+		"""
+	}
 
 	@FocusState private var isTextFieldFocused: Bool
 
 	var body: some View {
 		NavigationStack {
 			switch model.availability {
-				case .available:
-					chatInterface()
-				case .unavailable(.deviceNotEligible):
-					unavailableView("Device not eligible for Apple Intelligence")
-				case .unavailable(.appleIntelligenceNotEnabled):
-					unavailableView("Please enable Apple Intelligence in Settings")
-				case .unavailable(.modelNotReady):
-					unavailableView("Model is downloading or not ready")
-				case let .unavailable(other):
-					unavailableView("Model unavailable: \(other)")
+			case .available:
+				chatInterface()
+			case .unavailable(.deviceNotEligible):
+				unavailableView("Device not eligible for Apple Intelligence")
+			case .unavailable(.appleIntelligenceNotEnabled):
+				unavailableView("Please enable Apple Intelligence in Settings")
+			case .unavailable(.modelNotReady):
+				unavailableView("Model is downloading or not ready")
+			case let .unavailable(other):
+				unavailableView("Model unavailable: \(other)")
 			}
 		}
 		.onAppear {
@@ -80,7 +99,6 @@ struct ChatTab: View {
 							}
 							.listRowSeparator(.hidden)
 							.listRowBackground(Color.clear)
-							.padding(.horizontal)
 						} else {
 							HStack(alignment: .bottom) {
 								if message.1.isEmpty {
@@ -105,12 +123,12 @@ struct ChatTab: View {
 										)
 
 									Button {
-#if os(iOS) || os(tvOS) || os(watchOS)
-										UIPasteboard.general.string = message.1
-#elseif os(macOS)
-										NSPasteboard.general.clearContents()
-										NSPasteboard.general.setString(message.1, forType: .string)
-#endif
+										#if os(iOS) || os(tvOS) || os(watchOS)
+											UIPasteboard.general.string = message.1
+										#elseif os(macOS)
+											NSPasteboard.general.clearContents()
+											NSPasteboard.general.setString(message.1, forType: .string)
+										#endif
 										copiedMessageText = message.1
 
 										// Reset the copied state after 2 seconds
@@ -132,7 +150,6 @@ struct ChatTab: View {
 								.easeInOut,
 								value: message.1.isEmpty
 							)
-
 						}
 					}
 
@@ -158,8 +175,8 @@ struct ChatTab: View {
 								.bold()
 								.foregroundStyle(.white)
 								.padding(8)
-
 						}
+						.buttonBorderShape(.capsule)
 						.buttonStyle(.glassProminent)
 						.tint(.purple)
 						.disabled(
@@ -169,34 +186,34 @@ struct ChatTab: View {
 					.padding()
 				}
 
-//					.toolbar {
+				//					.toolbar {
 				// #if os(iOS)
-//						ToolbarItem(placement: .bottomBar) {
-//							TextField("Enter message", text: $text)
-//								.textFieldStyle(.plain)
-//								.focused($isTextFieldFocused)
-//								.onSubmit { sendMessage() }
-//						}
-//						ToolbarItem(placement: .bottomBar) {
-//							Button {
-//								sendMessage()
-//							} label: {
-//								Text("Send")
-//									.padding()
-//							}
-//
-//							.buttonStyle(.glassProminent)
-//							.disabled(
-//								text.isEmpty || session?.isResponding == true || session == nil
-//							)
-//						}
+				//						ToolbarItem(placement: .bottomBar) {
+				//							TextField("Enter message", text: $text)
+				//								.textFieldStyle(.plain)
+				//								.focused($isTextFieldFocused)
+				//								.onSubmit { sendMessage() }
+				//						}
+				//						ToolbarItem(placement: .bottomBar) {
+				//							Button {
+				//								sendMessage()
+				//							} label: {
+				//								Text("Send")
+				//									.padding()
+				//							}
+				//
+				//							.buttonStyle(.glassProminent)
+				//							.disabled(
+				//								text.isEmpty || session?.isResponding == true || session == nil
+				//							)
+				//						}
 				// #else
-//
-//
-//
+				//
+				//
+				//
 				// #endif
 
-//					}
+				//					}
 
 				.onChange(of: conversation.count) {
 					withAnimation(.easeOut(duration: 0.3)) {
@@ -222,11 +239,11 @@ struct ChatTab: View {
 				.background(.clear)
 				.scrollContentBackground(.hidden)
 
-#if !os(iOS)
+				#if !os(iOS)
 					.scrollEdgeEffectStyle(.soft, for: .all)
 					.padding(.horizontal)
 					.navigationTitle("Device Chat")
-#endif // !os(iOS)
+				#endif // !os(iOS)
 			}
 		}
 	}
@@ -296,7 +313,27 @@ struct ChatTab: View {
 
 			} catch {
 				await MainActor.run {
-					conversation[aiMessageIndex] = (false, "Sorry, I encountered an error:\n\n\(error.localizedDescription)")
+//					conversation[aiMessageIndex] = (false, "Sorry, I encountered an error:\n\n\(error.localizedDescription)")
+					conversation[aiMessageIndex] = (false, """
+					It sounds like you’re in serious danger. Please **seek help immediately**. You can connect with professionals or support services:
+
+					**People:**
+					- Psychologist: Mental health professional specializing in therapy
+					- Counselor: Trained professional providing guidance and support
+					- Therapist: Licensed practitioner for mental health treatment
+
+					**Helplines:**
+					- Lifeline: 131114 (24/7 crisis support)
+					- Beyond Blue: 1300224636 (Depression and anxiety support)
+					- Kids Helpline: 1800 551 800 (Support for young people)
+
+					**Websites:**
+					- Beyond Blue: beyondblue.org.au (Mental health information)
+					- Headspace: headspace.org.au (Youth mental health)
+					- ReachOut: reachout.com (Mental health resources for young people)
+
+					Your safety is the priority — reach out immediately.
+					""")
 				}
 			}
 		}
