@@ -1,6 +1,6 @@
 //
-//  DeviceChatView.swift
-//  Silicon Vault
+//  ChatTab.swift
+//  EduCalm
 //
 //  Created by Adon Omeri on 16/8/2025.
 //
@@ -56,18 +56,27 @@ struct ChatTab: View {
 
 	var body: some View {
 		NavigationStack {
-			switch model.availability {
-			case .available:
-				chatInterface()
-			case .unavailable(.deviceNotEligible):
-				unavailableView("Device not eligible for Apple Intelligence")
-			case .unavailable(.appleIntelligenceNotEnabled):
-				unavailableView("Please enable Apple Intelligence in Settings")
-			case .unavailable(.modelNotReady):
-				unavailableView("Model is downloading or not ready")
-			case let .unavailable(other):
-				unavailableView("Model unavailable: \(other)")
+			Group {
+				switch model.availability {
+				case .available:
+					chatInterface()
+				case .unavailable(.deviceNotEligible):
+					unavailableView("Device not eligible for Apple Intelligence")
+				case .unavailable(.appleIntelligenceNotEnabled):
+					unavailableView("Please enable Apple Intelligence in Settings")
+				case .unavailable(.modelNotReady):
+					unavailableView("Model is downloading or not ready")
+				case let .unavailable(other):
+					unavailableView("Model unavailable: \(other)")
+				}
 			}
+			#if os(iOS)
+			.toolbar {
+				ToolbarItem(placement: .title) {
+					Text("Chat")
+				}
+			}
+			#endif
 		}
 		.onAppear {
 			warmUpModel()
@@ -90,7 +99,7 @@ struct ChatTab: View {
 								Spacer(minLength: 50)
 								Text(message.1)
 									.textSelection(.enabled)
-									.padding()
+									.padding(10)
 									.foregroundStyle(.white)
 									.glassEffect(
 										.clear.tint(.gray).interactive(),
@@ -105,7 +114,7 @@ struct ChatTab: View {
 									Image(systemName: "ellipsis")
 										.symbolEffect(.variableColor.iterative.hideInactiveLayers.reversing, options: .repeat(.continuous))
 										.foregroundStyle(.white)
-										.padding()
+										.padding(10)
 										.glassEffect(
 											.clear.tint(.blue).interactive(),
 											in: .rect(cornerRadius: 15)
@@ -115,15 +124,16 @@ struct ChatTab: View {
 										.textSelection(.enabled)
 										.contentTransition(.numericText())
 										.animation(.easeInOut, value: message.1)
-										.padding()
+										.padding(10)
 										.foregroundStyle(.white)
 										.glassEffect(
 											.clear.tint(.blue).interactive(),
 											in: .rect(cornerRadius: 15)
 										)
+										.animation(.easeInOut(duration: 0.3), value: message.1)
 
 									Button {
-										#if os(iOS) || os(tvOS) || os(watchOS)
+										#if os(iOS)
 											UIPasteboard.general.string = message.1
 										#elseif os(macOS)
 											NSPasteboard.general.clearContents()
@@ -141,7 +151,6 @@ struct ChatTab: View {
 									}
 									.buttonStyle(.glassProminent)
 								}
-								Spacer(minLength: 20)
 							}
 							.listRowSeparator(.hidden)
 							.listRowBackground(Color.clear)
@@ -153,7 +162,11 @@ struct ChatTab: View {
 						}
 					}
 
-					// Add padding at bottom to prevent content being hidden behind input overlay
+					Rectangle()
+						.frame(width: 1, height: 1)
+						.opacity(0)
+						.id("bottom")
+						.listRowBackground(Color.clear)
 				}
 				.safeAreaBar(edge: .bottom) {
 					HStack {
@@ -186,35 +199,6 @@ struct ChatTab: View {
 					.padding()
 				}
 
-				//					.toolbar {
-				// #if os(iOS)
-				//						ToolbarItem(placement: .bottomBar) {
-				//							TextField("Enter message", text: $text)
-				//								.textFieldStyle(.plain)
-				//								.focused($isTextFieldFocused)
-				//								.onSubmit { sendMessage() }
-				//						}
-				//						ToolbarItem(placement: .bottomBar) {
-				//							Button {
-				//								sendMessage()
-				//							} label: {
-				//								Text("Send")
-				//									.padding()
-				//							}
-				//
-				//							.buttonStyle(.glassProminent)
-				//							.disabled(
-				//								text.isEmpty || session?.isResponding == true || session == nil
-				//							)
-				//						}
-				// #else
-				//
-				//
-				//
-				// #endif
-
-				//					}
-
 				.onChange(of: conversation.count) {
 					withAnimation(.easeOut(duration: 0.3)) {
 						if session?.isResponding == true {
@@ -238,12 +222,6 @@ struct ChatTab: View {
 				}
 				.background(.clear)
 				.scrollContentBackground(.hidden)
-
-				#if !os(iOS)
-					.scrollEdgeEffectStyle(.soft, for: .all)
-					.padding(.horizontal)
-					.navigationTitle("Device Chat")
-				#endif // !os(iOS)
 			}
 		}
 	}
@@ -313,7 +291,7 @@ struct ChatTab: View {
 
 			} catch {
 				await MainActor.run {
-//					conversation[aiMessageIndex] = (false, "Sorry, I encountered an error:\n\n\(error.localizedDescription)")
+					//					conversation[aiMessageIndex] = (false, "Sorry, I encountered an error:\n\n\(error.localizedDescription)")
 					conversation[aiMessageIndex] = (false, """
 					It sounds like you’re in serious danger. Please **seek help immediately**. You can connect with professionals or support services:
 
