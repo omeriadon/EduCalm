@@ -7,8 +7,8 @@
   },
   "groups" : [
     {
-      "blend-mode" : "hard-light",
-      "blur-material" : 0.13,
+      "blend-mode" : "screen",
+      "blur-material" : 0.15,
       "layers" : [
         {
           "image-name" : "2e4ced2541a782a8effb49f50b9f34e5fa072cb89a4c9f63e7f16a0598453ac8.png",
@@ -27,8 +27,8 @@
       "position" : {
         "scale" : 1,
         "translation-in-points" : [
-          -17.40001553245891,
-          -19.709022332974783
+          -5.165640532458909,
+          4.947227667025217
         ]
       },
       "shadow" : {
@@ -46,16 +46,14 @@
       "layers" : [
         {
           "blend-mode" : "normal",
-          "fill" : "automatic",
-          "glass" : true,
-          "image-name" : "eb1fba60644f03eda20ca117418959e040dde183e8964d6bfd28e40f0284df1c.png",
-          "name" : "eb1fba60644f03eda20ca117418959e040dde183e8964d6bfd28e40f0284df1c",
-          "opacity" : 1,
+          "fill" : "none",
+          "image-name" : "4063e37e43ffcc0c5bb4cd6a2550ffc502ab4e523ab932f4289acfb866c96a99.png",
+          "name" : "4063e37e43ffcc0c5bb4cd6a2550ffc502ab4e523ab932f4289acfb866c96a99",
           "position" : {
-            "scale" : 2.09,
+            "scale" : 2.4,
             "translation-in-points" : [
-              -45.5546875,
-              -103.2734375
+              -55.375,
+              -113.6484375
             ]
           }
         }

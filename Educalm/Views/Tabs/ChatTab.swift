@@ -18,7 +18,8 @@ struct ChatTab: View {
 	/// true if user, false if llm
 	@State var conversation: [(Bool, String)] = []
 
-	private let model = SystemLanguageModel.default
+	private let model = SystemLanguageModel(guardrails: .permissiveContentTransformations
+	)
 
 	@State var colorfulPreset = ColorfulPreset.starry
 
@@ -90,139 +91,146 @@ struct ChatTab: View {
 				ColorfulView(color: $colorfulPreset)
 					.ignoresSafeArea()
 					.opacity(0.5)
-				List {
-					ForEach(Array(conversation.enumerated()), id: \.offset) {
-						_,
-							message in
-						if message.0 {
-							HStack {
-								Spacer(minLength: 50)
-								Text(message.1)
-									.textSelection(.enabled)
-									.padding(10)
-									.foregroundStyle(.white)
-									.glassEffect(
-										.clear.tint(.gray).interactive(),
-										in: .rect(cornerRadius: 15)
-									)
-							}
-							.listRowSeparator(.hidden)
-							.listRowBackground(Color.clear)
-						} else {
-							HStack(alignment: .bottom) {
-								if message.1.isEmpty {
-									Image(systemName: "ellipsis")
-										.symbolEffect(.variableColor.iterative.hideInactiveLayers.reversing, options: .repeat(.continuous))
-										.foregroundStyle(.white)
-										.padding(10)
-										.glassEffect(
-											.clear.tint(.blue).interactive(),
-											in: .rect(cornerRadius: 15)
-										)
-								} else {
-									Text(.init(message.1))
+				ScrollView {
+					LazyVStack {
+						ForEach(Array(conversation.enumerated()), id: \.offset) {
+							_,
+								message in
+							if message.0 {
+								HStack {
+									Spacer(minLength: 50)
+									Text(message.1)
 										.textSelection(.enabled)
-										.contentTransition(.numericText())
-										.animation(.easeInOut, value: message.1)
 										.padding(10)
 										.foregroundStyle(.white)
 										.glassEffect(
-											.clear.tint(.blue).interactive(),
+											.clear.tint(.gray).interactive(),
 											in: .rect(cornerRadius: 15)
 										)
-										.animation(.easeInOut(duration: 0.3), value: message.1)
-
-									Button {
-										#if os(iOS)
-											UIPasteboard.general.string = message.1
-										#elseif os(macOS)
-											NSPasteboard.general.clearContents()
-											NSPasteboard.general.setString(message.1, forType: .string)
-										#endif
-										copiedMessageText = message.1
-
-										// Reset the copied state after 2 seconds
-										DispatchQueue.main.asyncAfter(deadline: .now() + 2) {
-											copiedMessageText = nil
-										}
-									} label: {
-										copyLabel(text: message.1, isCopied: copiedMessageText == message.1)
-											.frame(width: 20, height: 20)
-									}
-									.buttonStyle(.glassProminent)
 								}
+								.padding(.horizontal, 10)
+
+							} else {
+								HStack(alignment: .bottom) {
+									if message.1.isEmpty {
+										Image(systemName: "ellipsis")
+											.symbolEffect(.variableColor.iterative.hideInactiveLayers.reversing, options: .repeat(.continuous))
+											.foregroundStyle(.white)
+											.padding(10)
+											.glassEffect(
+												.clear.tint(.blue).interactive(),
+												in: .rect(cornerRadius: 15)
+											)
+									} else {
+										Text(.init(message.1))
+											.textSelection(.enabled)
+											.contentTransition(.numericText())
+											.padding(10)
+											.foregroundStyle(.white)
+											.animation(.easeInOut(duration: 0.3), value: message.1)
+											.glassEffect(
+												.clear.tint(.blue).interactive(),
+												in: .rect(cornerRadius: 15)
+											)
+
+										Button {
+											#if os(iOS)
+												UIPasteboard.general.string = message.1
+											#elseif os(macOS)
+												NSPasteboard.general.clearContents()
+												NSPasteboard.general.setString(message.1, forType: .string)
+											#endif
+											copiedMessageText = message.1
+
+											// Reset the copied state after 2 seconds
+											DispatchQueue.main.asyncAfter(deadline: .now() + 2) {
+												copiedMessageText = nil
+											}
+										} label: {
+											copyLabel(text: message.1, isCopied: copiedMessageText == message.1)
+												.foregroundStyle(.white)
+										}
+										.buttonStyle(.plain)
+										.frame(width: 40, height: 40)
+										.glassEffect(
+											.clear.tint(.purple).interactive(),
+											in: .circle
+										)
+									}
+									Spacer(minLength: 50)
+								}
+								.padding(.horizontal, 10)
+								.animation(
+									.easeInOut,
+									value: message.1.isEmpty
+								)
 							}
-							.listRowSeparator(.hidden)
+						}
+
+						Rectangle()
+							.frame(width: 1, height: 1)
+							.opacity(0)
+							.id("bottom")
 							.listRowBackground(Color.clear)
-							.contentTransition(.opacity)
-							.animation(
-								.easeInOut,
-								value: message.1.isEmpty
-							)
-						}
 					}
-
-					Rectangle()
-						.frame(width: 1, height: 1)
-						.opacity(0)
-						.id("bottom")
-						.listRowBackground(Color.clear)
 				}
-				.safeAreaBar(edge: .bottom) {
-					HStack {
-						TextField("Enter message", text: $text)
-							.padding()
-							.textFieldStyle(.plain)
-							.focused($isTextFieldFocused)
-							.onSubmit { sendMessage() }
-							.glassEffect(
-								.regular,
-								in: .capsule
-							)
-							.foregroundStyle(.white)
-
-						Button {
-							sendMessage()
-						} label: {
-							Label("Send", systemImage: "arrow.up")
-								.bold()
-								.foregroundStyle(.white)
-								.padding(8)
-						}
-						.buttonBorderShape(.capsule)
-						.buttonStyle(.glassProminent)
-						.tint(.purple)
-						.disabled(
-							text.isEmpty || session?.isResponding == true || session == nil
+			}
+			.safeAreaBar(edge: .bottom) {
+				HStack {
+					TextField("Enter message", text: $text)
+						.padding(10)
+						.textFieldStyle(.plain)
+						.background(Color.clear)
+						.focused($isTextFieldFocused)
+						.onSubmit { sendMessage() }
+						.glassEffect(
+							.clear,
+							in: .capsule
 						)
-					}
-					.padding()
-				}
+						.foregroundStyle(.white)
 
-				.onChange(of: conversation.count) {
-					withAnimation(.easeOut(duration: 0.3)) {
-						if session?.isResponding == true {
-							proxy.scrollTo("bottom", anchor: .bottom)
-						} else if !conversation.isEmpty {
-							proxy.scrollTo(conversation.count - 1, anchor: .bottom)
-						}
+					Button {
+						sendMessage()
+					} label: {
+						Label("Send", systemImage: "arrow.up")
+							.bold()
+							.foregroundStyle(.white)
+							.padding(10)
+					}
+					.glassEffect(
+						.clear.tint(.purple).interactive(),
+						in: .capsule
+					)
+					.disabled(
+						text.isEmpty || session?.isResponding == true || session == nil
+					)
+				}
+				.padding()
+			}
+
+			.onChange(of: conversation.count) {
+				withAnimation(.easeOut(duration: 0.3)) {
+					if session?.isResponding == true {
+						proxy.scrollTo("bottom", anchor: .bottom)
+					} else if !conversation.isEmpty {
+						proxy.scrollTo(conversation.count - 1, anchor: .bottom)
 					}
 				}
-				.onChange(of: conversation.last?.1) {
-					withAnimation(.easeOut(duration: 0.3)) {
+			}
+			.onChange(of: conversation.last?.1) {
+				withAnimation(.easeOut(duration: 0.3)) {
+					proxy.scrollTo("bottom", anchor: .bottom)
+				}
+			}
+			.onChange(of: session?.isResponding) {
+				withAnimation(.easeOut(duration: 0.3)) {
+					if session?.isResponding == true {
 						proxy.scrollTo("bottom", anchor: .bottom)
 					}
 				}
-				.onChange(of: session?.isResponding) {
-					withAnimation(.easeOut(duration: 0.3)) {
-						if session?.isResponding == true {
-							proxy.scrollTo("bottom", anchor: .bottom)
-						}
-					}
-				}
-				.background(.clear)
-				.scrollContentBackground(.hidden)
 			}
+			.background(.clear)
+			.scrollContentBackground(.hidden)
 		}
 	}
 
