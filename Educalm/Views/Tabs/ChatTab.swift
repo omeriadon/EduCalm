@@ -191,10 +191,12 @@ struct ChatTab: View {
                 VStack(spacing: 0) {
                     Text("⚠️ EduCalm is not a substitute for professional mental health care. If you're in danger, please seek help immediately.")
                         .font(.footnote)
-                        .foregroundColor(.white.opacity(0.8))
+						.foregroundStyle(.secondary)
                         .multilineTextAlignment(.center)
-                        .frame(maxWidth: .infinity)
+//                        .frame(maxWidth: .infinity)
                         .padding(.horizontal, 8)
+						.padding(.bottom, -10)
+
                     HStack {
                         TextField("Enter message", text: $text)
                             .padding(10)
