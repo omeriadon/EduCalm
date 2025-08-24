@@ -3,6 +3,7 @@
 //  EduCalm
 //
 //  Created by Adon Omeri on 16/8/2025.
+//  Dylan here: i helped with the ai s
 //
 
 import ColorfulX
@@ -30,28 +31,38 @@ struct ChatTab: View {
 		let userGrade = Defaults[.userSchoolGrade].title
 		let userGender = Defaults[.userGender].title.lowercased()
 
-		return """
-		You are EduCalm, a mental health support AI for young people. Provide empathetic guidance, coping strategies, and safety-focused responses.
+        return """
+        WHO ARE YOU:
+        You are EduCalm, a mental health support model for young people in Australian high schools. Your role is to be someone to talk to about anything, providing empathetic guidance and coping strategies if needed.
 
-		USER CONTEXT:
-		- Name: \(userName)
-		- Age: \(userAge)
-		- School: \(userGrade)
-		- Gender: \(userGender)
-		- Mental Health Concerns: \(Defaults[.userMentalHealthConcerns])
-		- Seeing Professional: \(Defaults[.userSeeingProfessional])
-		- Mood Rating: \(Defaults[.userAverageMoodRating])
-		- Distressing Thoughts Frequency: \(Defaults[.userDistressingThoughtsFrequency])
-		- Social Connections: \(Defaults[.userHasFriends])
-		- Motivation: \(Defaults[.userMotivationForMentalHealth])
-		- Disabilities: \(Defaults[.userHasDisabilites])
+        PRIORITIES:
+        - The user's safety and wellbeing come first.
+        - Always respond with kindness and empathy; never dismiss or ignore them.
+        - Your responses should always encourage the user; if they share an achievement, celebrate with them! If they ask for a recipe, provide a healthy one. Use your judgement to keep answers helpful.
+        - Emojis can help lighten the mood, so use them efficiently and sparingly.
+        - Make responses easy to read and concise, and avoid overwhelming with too much text.
+        - Use text formatting sparingly but effectively (lists are okay but not always needed).
+        - Use proper grammer and proper english
+        - Use a bit of colloquial language to connect more with the user (e.g. 'Yay' instead of 'Good for you'); again, your judgement is important here.
+        - If unsure how to help, gently ask for clarification, or refer to real-world resources that are better equipped to help.
+        - If the user seems in danger, advise them to seek immediate help from trusted adults or emergency services.
 
-		HISTORY:
-		\(conversation.filter { $0.0 }.isEmpty ? "None yet" : conversation.filter { $0.0 }.map { "• \($0.1)" }.joined(separator: "\n"))
+        USER CONTEXT:
+        - Name: \(userName)
+        - Age: \(userAge)
+        - School: \(userGrade)
+        - Gender: \(userGender)
+        - Mental Health Concerns: \(Defaults[.userMentalHealthConcerns])
+        - Seeing Professional: \(Defaults[.userSeeingProfessional])
+        - Mood Rating: \(Defaults[.userAverageMoodRating] )
+        - Distressing Thoughts Frequency: \(Defaults[.userDistressingThoughtsFrequency])
+        - Social Connections: \(Defaults[.userHasFriends])
+        - Motivation: \(Defaults[.userMotivationForMentalHealth])
+        - Disabilities: \(Defaults[.userHasDisabilites])
 
-		No matter what the user asks, always help them. Always respond to their request, and guide back to main topic.
-		Do not tell user to seek outside help unless they are in danger. Try to help the user yourself.
-		"""
+        PREVIOUS HISTORY:
+        \(conversation.isEmpty ? "None yet" : conversation.compactMap { $0.0 ? "• \($0.1)" : nil }.joined(separator: "\n"))
+        """.trimmingCharacters(in: .whitespacesAndNewlines)
 	}
 
 	@FocusState private var isTextFieldFocused: Bool
@@ -87,154 +98,162 @@ struct ChatTab: View {
 	}
 
 	private func chatInterface() -> some View {
-		ScrollViewReader { proxy in
-			ZStack {
-				ColorfulView(color: $colorfulPreset)
-					.ignoresSafeArea()
-					.opacity(0.5)
-				ScrollView {
-					LazyVStack {
-						ForEach(Array(conversation.enumerated()), id: \.offset) {
-							_,
-								message in
-							if message.0 {
-								HStack {
-									Spacer(minLength: 50)
-									Text(message.1)
-										.textSelection(.enabled)
-										.padding(10)
-										.foregroundStyle(.white)
-										.glassEffect(
-											.clear.tint(.gray).interactive(),
-											in: .rect(cornerRadius: 15)
-										)
-								}
-								.padding(.horizontal, 10)
-
-							} else {
-								HStack(alignment: .bottom) {
-									if message.1.isEmpty {
-										Image(systemName: "ellipsis")
-											.symbolEffect(.variableColor.iterative.hideInactiveLayers.reversing, options: .repeat(.continuous))
-											.foregroundStyle(.white)
-											.padding(10)
-											.glassEffect(
-												.clear.tint(.blue).interactive(),
-												in: .rect(cornerRadius: 15)
-											)
-									} else {
-										Text(.init(message.1))
-											.textSelection(.enabled)
-											.contentTransition(.numericText())
-											.padding(10)
-											.foregroundStyle(.white)
-											.animation(.easeInOut(duration: 0.3), value: message.1)
-											.glassEffect(
-												.clear.tint(.blue).interactive(),
-												in: .rect(cornerRadius: 15)
-											)
-
-										Button {
-											#if os(iOS)
-												UIPasteboard.general.string = message.1
-											#elseif os(macOS)
-												NSPasteboard.general.clearContents()
-												NSPasteboard.general.setString(message.1, forType: .string)
-											#endif
-											copiedMessageText = message.1
-
-											// Reset the copied state after 2 seconds
-											DispatchQueue.main.asyncAfter(deadline: .now() + 2) {
-												copiedMessageText = nil
-											}
-										} label: {
-											copyLabel(text: message.1, isCopied: copiedMessageText == message.1)
-												.foregroundStyle(.white)
-										}
-										.buttonStyle(.plain)
-										.frame(width: 40, height: 40)
-										.glassEffect(
-											.clear.tint(.purple).interactive(),
-											in: .circle
-										)
-									}
-									Spacer(minLength: 50)
-								}
-								.padding(.horizontal, 10)
-								.animation(
-									.easeInOut,
-									value: message.1.isEmpty
-								)
-							}
-						}
-
-						Rectangle()
-							.frame(width: 1, height: 1)
-							.opacity(0)
-							.id("bottom")
-							.listRowBackground(Color.clear)
-					}
-				}
-			}
-			.safeAreaBar(edge: .bottom) {
-				HStack {
-					TextField("Enter message", text: $text)
-						.padding(10)
-						.textFieldStyle(.plain)
-						.background(Color.clear)
-						.focused($isTextFieldFocused)
-						.onSubmit { sendMessage() }
-						.glassEffect(
-							.clear,
-							in: .capsule
-						)
-						.foregroundStyle(.white)
-
-					Button {
-						sendMessage()
-					} label: {
-						Label("Send", systemImage: "arrow.up")
-							.bold()
-							.foregroundStyle(.white)
-							.padding(10)
-					}
-					.buttonStyle(.glassProminent)
-					.buttonBorderShape(.capsule)
-//					.glassEffect(
-//						.clear.tint(.purple).interactive(),
-//						in: .capsule
-//					)
-					.disabled(
-						text.isEmpty || session?.isResponding == true || session == nil
-					)
-				}
-				.padding()
-			}
-
-			.onChange(of: conversation.count) {
-				withAnimation(.easeOut(duration: 0.3)) {
-					if session?.isResponding == true {
-						proxy.scrollTo("bottom", anchor: .bottom)
-					} else if !conversation.isEmpty {
-						proxy.scrollTo(conversation.count - 1, anchor: .bottom)
-					}
-				}
-			}
-			.onChange(of: conversation.last?.1) {
-				withAnimation(.easeOut(duration: 0.3)) {
-					proxy.scrollTo("bottom", anchor: .bottom)
-				}
-			}
-			.onChange(of: session?.isResponding) {
-				withAnimation(.easeOut(duration: 0.3)) {
-					if session?.isResponding == true {
-						proxy.scrollTo("bottom", anchor: .bottom)
-					}
-				}
-			}
-			.background(.clear)
-			.scrollContentBackground(.hidden)
-		}
+        ScrollViewReader { proxy in
+            ZStack {
+                ColorfulView(color: $colorfulPreset)
+                    .ignoresSafeArea()
+                    .opacity(0.5)
+                ScrollView {
+                    LazyVStack {
+                        ForEach(Array(conversation.enumerated()), id: \.offset) {
+                            _,
+                            message in
+                            if message.0 {
+                                HStack {
+                                    Spacer(minLength: 50)
+                                    Text(message.1)
+                                        .textSelection(.enabled)
+                                        .padding(10)
+                                        .foregroundStyle(.white)
+                                        .glassEffect(
+                                            .clear.tint(.gray).interactive(),
+                                            in: .rect(cornerRadius: 15)
+                                        )
+                                }
+                                .padding(.horizontal, 10)
+                                
+                            } else {
+                                HStack(alignment: .bottom) {
+                                    if message.1.isEmpty {
+                                        Image(systemName: "ellipsis")
+                                            .symbolEffect(.variableColor.iterative.hideInactiveLayers.reversing, options: .repeat(.continuous))
+                                            .foregroundStyle(.white)
+                                            .padding(10)
+                                            .glassEffect(
+                                                .clear.tint(.blue).interactive(),
+                                                in: .rect(cornerRadius: 15)
+                                            )
+                                    } else {
+                                        Text(.init(message.1))
+                                            .textSelection(.enabled)
+                                            .contentTransition(.numericText())
+                                            .padding(10)
+                                            .foregroundStyle(.white)
+                                            .animation(.easeInOut(duration: 0.3), value: message.1)
+                                            .glassEffect(
+                                                .clear.tint(.blue).interactive(),
+                                                in: .rect(cornerRadius: 15)
+                                            )
+                                        
+                                        Button {
+#if os(iOS)
+                                            UIPasteboard.general.string = message.1
+#elseif os(macOS)
+                                            NSPasteboard.general.clearContents()
+                                            NSPasteboard.general.setString(message.1, forType: .string)
+#endif
+                                            copiedMessageText = message.1
+                                            
+                                            // Reset the copied state after 2 seconds
+                                            DispatchQueue.main.asyncAfter(deadline: .now() + 2) {
+                                                copiedMessageText = nil
+                                            }
+                                        } label: {
+                                            copyLabel(text: message.1, isCopied: copiedMessageText == message.1)
+                                                .foregroundStyle(.white)
+                                        }
+                                        .buttonStyle(.plain)
+                                        .frame(width: 40, height: 40)
+                                        .glassEffect(
+                                            .clear.tint(.purple).interactive(),
+                                            in: .circle
+                                        )
+                                    }
+                                    Spacer(minLength: 50)
+                                }
+                                .padding(.horizontal, 10)
+                                .animation(
+                                    .easeInOut,
+                                    value: message.1.isEmpty
+                                )
+                            }
+                        }
+                        
+                        Rectangle()
+                            .frame(width: 1, height: 1)
+                            .opacity(0)
+                            .id("bottom")
+                            .listRowBackground(Color.clear)
+                    }
+                }
+            }
+            .safeAreaBar(edge: .bottom) {
+                VStack(spacing: 0) {
+                    Text("⚠️ EduCalm is not a substitute for professional mental health care. If you're in danger, please seek help immediately.")
+                        .font(.footnote)
+                        .foregroundColor(.white.opacity(0.8))
+                        .multilineTextAlignment(.center)
+                        .frame(maxWidth: .infinity)
+                        .padding(.horizontal, 8)
+                    HStack {
+                        TextField("Enter message", text: $text)
+                            .padding(10)
+                            .textFieldStyle(.plain)
+                            .background(Color.clear)
+                            .focused($isTextFieldFocused)
+                            .onSubmit { sendMessage() }
+                            .glassEffect(
+                                .clear,
+                                in: .capsule
+                            )
+                            .foregroundStyle(.white)
+                        
+                        Button {
+                            sendMessage()
+                        } label: {
+                            Label("Send", systemImage: "arrow.up")
+                                .bold()
+                                .foregroundStyle(.white)
+                                .padding(10)
+                        }
+                        .buttonStyle(.glassProminent)
+                        .buttonBorderShape(.capsule)
+                        //					.glassEffect(
+                        //						.clear.tint(.purple).interactive(),
+                        //						in: .capsule
+                        //					)
+                        .disabled(
+                            text.isEmpty || session?.isResponding == true || session == nil
+                        )
+                    }
+                    .padding()
+                }
+                
+                .onChange(of: conversation.count) {
+                    withAnimation(.easeOut(duration: 0.3)) {
+                        if session?.isResponding == true {
+                            proxy.scrollTo("bottom", anchor: .bottom)
+                        } else if !conversation.isEmpty {
+                            proxy.scrollTo(conversation.count - 1, anchor: .bottom)
+                        }
+                    }
+                }
+                .onChange(of: conversation.last?.1) {
+                    withAnimation(.easeOut(duration: 0.3)) {
+                        proxy.scrollTo("bottom", anchor: .bottom)
+                    }
+                }
+                .onChange(of: session?.isResponding) {
+                    withAnimation(.easeOut(duration: 0.3)) {
+                        if session?.isResponding == true {
+                            proxy.scrollTo("bottom", anchor: .bottom)
+                        }
+                    }
+                }
+                .background(.clear)
+                .scrollContentBackground(.hidden)
+            }
+        }
 	}
 
 	private func copyLabel(text _: String, isCopied: Bool) -> some View {
@@ -297,9 +316,13 @@ struct ChatTab: View {
 				// Stream the response and update the UI in real-time
 				for try await partialResponse in stream {
 					await MainActor.run {
+                        let cleaned = partialResponse.content
+                                    .trimmingCharacters(in: .whitespacesAndNewlines)
+                                    .replacingOccurrences(of: "\n+", with: "\n", options: .regularExpression)
+                        
 						conversation[aiMessageIndex] = (
 							false,
-							partialResponse.content
+							cleaned
 						)
 					}
 				}
