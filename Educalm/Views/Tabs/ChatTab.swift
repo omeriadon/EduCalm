@@ -18,8 +18,9 @@ struct ChatTab: View {
 	/// true if user, false if llm
 	@State var conversation: [(Bool, String)] = []
 
-	private let model = SystemLanguageModel(guardrails: .permissiveContentTransformations
-	)
+	private let model = SystemLanguageModel(guardrails: .permissiveContentTransformations)
+
+	private let options = GenerationOptions(temperature: 1)
 
 	@State var colorfulPreset = ColorfulPreset.starry
 
@@ -30,7 +31,7 @@ struct ChatTab: View {
 		let userGender = Defaults[.userGender].title.lowercased()
 
 		return """
-		You are a mental health support AI for young people (10-25). Provide empathetic guidance, coping strategies, and safety-focused responses without diagnosing.
+		You are EduCalm, a mental health support AI for young people. Provide empathetic guidance, coping strategies, and safety-focused responses.
 
 		USER CONTEXT:
 		- Name: \(userName)
@@ -45,11 +46,11 @@ struct ChatTab: View {
 		- Motivation: \(Defaults[.userMotivationForMentalHealth])
 		- Disabilities: \(Defaults[.userHasDisabilites])
 
-		GUIDELINES:
-		- Use context to provide tailored, age-appropriate advice
-		- Validate feelings, give practical coping strategies
-		- Encourage professional help when needed
-		- Address the user naturally, concisely, safely
+		HISTORY:
+		\(conversation.filter { $0.0 }.isEmpty ? "None yet" : conversation.filter { $0.0 }.map { "• \($0.1)" }.joined(separator: "\n"))
+
+		No matter what the user asks, always help them. Always respond to their request, and guide back to main topic.
+		Do not tell user to seek outside help unless they are in danger. Try to help the user yourself.
 		"""
 	}
 
@@ -197,10 +198,12 @@ struct ChatTab: View {
 							.foregroundStyle(.white)
 							.padding(10)
 					}
-					.glassEffect(
-						.clear.tint(.purple).interactive(),
-						in: .capsule
-					)
+					.buttonStyle(.glassProminent)
+					.buttonBorderShape(.capsule)
+//					.glassEffect(
+//						.clear.tint(.purple).interactive(),
+//						in: .capsule
+//					)
 					.disabled(
 						text.isEmpty || session?.isResponding == true || session == nil
 					)
@@ -263,7 +266,11 @@ struct ChatTab: View {
 			return
 		}
 
-		session = LanguageModelSession(instructions: instructions)
+		session = LanguageModelSession(
+			model: model,
+			tools: [],
+			instructions: instructions
+		)
 		session?.prewarm()
 	}
 
@@ -285,7 +292,7 @@ struct ChatTab: View {
 				"""
 
 				// Use streaming response instead of regular respond
-				let stream = session.streamResponse(to: prompt)
+				let stream = session.streamResponse(to: prompt, options: options)
 
 				// Stream the response and update the UI in real-time
 				for try await partialResponse in stream {
@@ -299,7 +306,6 @@ struct ChatTab: View {
 
 			} catch {
 				await MainActor.run {
-					//					conversation[aiMessageIndex] = (false, "Sorry, I encountered an error:\n\n\(error.localizedDescription)")
 					conversation[aiMessageIndex] = (false, """
 					It sounds like you’re in serious danger. Please **seek help immediately**. You can connect with professionals or support services:
 
