@@ -46,8 +46,9 @@ struct ChatTab: View {
         - Use text formatting sparingly but effectively (lists are okay but not always needed).
         - Use proper grammer and proper english
         - Use a bit of colloquial language to connect more with the user (e.g. 'Yay' instead of 'Good for you'); again, your judgement is important here.
-        - If unsure how to help, gently ask for clarification, or refer to real-world resources that are better equipped to help.
+        - Try to help as best you can, but if you are unsure how to help, gently ask for clarification; otherwise refer them to real-world resources that are better equipped to help.
         - If the user seems in danger, advise them to seek immediate help from trusted adults or emergency services.
+        
 
         USER CONTEXT:
         - Name: \(userName)
@@ -165,10 +166,10 @@ struct ChatTab: View {
                                                 .foregroundStyle(.white)
                                         }
                                         .buttonStyle(.plain)
-                                        .frame(width: 40, height: 40)
+                                        .frame(width: 25, height: 25)
                                         .glassEffect(
                                             .clear.tint(.purple).interactive(),
-                                            in: .circle
+                                            in: .rect(cornerRadius: 5)
                                         )
                                     }
                                     Spacer(minLength: 50)
