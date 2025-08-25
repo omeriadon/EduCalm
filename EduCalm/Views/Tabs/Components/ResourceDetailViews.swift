@@ -41,6 +41,7 @@ struct PeopleDetailView: View {
 					)
 					.padding(.horizontal)
 				}
+				.padding(.bottom)
 			}
 			.navigationTitle("People")
 			.scrollContentBackground(.hidden)
@@ -102,6 +103,7 @@ struct HelplinesDetailView: View {
 					.buttonStyle(.plain)
 					.padding(.horizontal)
 				}
+				.padding(.bottom)
 			}
 			.navigationTitle("Helplines")
 			.scrollContentBackground(.hidden)
@@ -163,6 +165,7 @@ struct WebsitesDetailView: View {
 					.buttonStyle(.plain)
 					.padding(.horizontal)
 				}
+				.padding(.bottom)
 			}
 			.navigationTitle("Websites")
 			.scrollContentBackground(.hidden)
@@ -225,6 +228,7 @@ struct AppsDetailView: View {
 					.buttonStyle(.plain)
 					.padding(.horizontal)
 				}
+				.padding(.bottom)
 			}
 			.navigationTitle("Apps")
 			.scrollContentBackground(.hidden)
