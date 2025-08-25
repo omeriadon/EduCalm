@@ -21,6 +21,9 @@ struct ResourcesTab: View {
 			                	Daily support and guidance at school
 			                	Extend due dates
 			                	"""),
+                                PersonResource(symbol: "graduationcap", title: "Mr. David Cho | Math Teacher", description: """
+                                A prominent figure in the mathematics department who is someone you can talk to (I don't know why, but you can)
+                                """),
 			                	PersonResource(symbol: "heart.text.square", title: "Therapist", description: "Licensed practitioner for mental health treatment"),
 			                	PersonResource(symbol: "person.3", title: "Parents", description: "Family support and understanding"),
 			                	PersonResource(symbol: "person.line.dotted.person", title: "Friends", description: "Trusted support network"),
