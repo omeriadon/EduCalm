@@ -58,7 +58,7 @@ struct HomeTab: View {
 							)
                             QuickActionCard(
                                 title: "Noise",
-                                icon: "mic.fill",
+                                icon: "hands.and.sparkles",
                                 description: "Calming noise player"
                             )
 						}

@@ -1,388 +1,239 @@
+//
 //  SoundsTab.swift
 //  EduCalm
 //
-//  Created by Dylan Karunanayake on 25/8/2025.
-//  yay it works
+//  Cross-platform Sounds tab for iOS & macOS
+//  Updated for consistent navigation and background behavior
 //
 
 import SwiftUI
-import ColorfulX
-@preconcurrency import AVFoundation
+import AVFoundation
 import Combine
-import Foundation
+import ColorfulX
 
-// AmbientSound is a reference type so changes publish correctly to the UI across platforms
-final class AmbientSound: ObservableObject, Identifiable {
+// MARK: - Model
+
+struct Sound: Identifiable, Hashable {
     let id = UUID()
-    let name: String
-    let fileName: String
-    @Published var volume: Float
-    let playerNode: AVAudioPlayerNode
-    var audioFile: AVAudioFile?
-    var pcmBuffer: AVAudioPCMBuffer?
-    @Published var isPlaying: Bool = false
-
-    init(name: String, fileName: String, volume: Float = 0.5, playerNode: AVAudioPlayerNode, audioFile: AVAudioFile?, pcmBuffer: AVAudioPCMBuffer?) {
-        self.name = name
-        self.fileName = fileName
-        self.volume = volume
-        self.playerNode = playerNode
-        self.audioFile = audioFile
-        self.pcmBuffer = pcmBuffer
-    }
+    let title: String
+    let filename: String
+    let systemImage: String
+    var isPlaying: Bool = false
+    var volume: Float = 1.0
 }
 
-// Manager interacts with AVAudioEngine; UI updates are dispatched to main thread where needed.
-class AmbientSoundManager: ObservableObject {
-    let engine = AVAudioEngine()
-    @Published var sounds: [AmbientSound] = []
+// MARK: - Audio Manager
+
+final class SoundsAudioManager: ObservableObject {
+    @Published private(set) var sounds: [Sound] = [
+        Sound(title: "Rain", filename: "rain", systemImage: "cloud.rain"),
+        Sound(title: "Thunder", filename: "thunder", systemImage: "cloud.bolt.rain"),
+        Sound(title: "Fire", filename: "fire", systemImage: "flame"),
+        Sound(title: "Birds", filename: "birds", systemImage: "bird"),
+        Sound(title: "Night", filename: "night", systemImage: "moon.stars"),
+        Sound(title: "Fan", filename: "fan", systemImage: "fanblades"),
+        Sound(title: "Subwoofer", filename: "subwoofer", systemImage: "gamecontroller"),
+        Sound(title: "Water", filename: "water", systemImage: "water.waves")
+    ]
+    
+    private var players: [UUID: AVAudioPlayer] = [:]
     @Published var masterVolume: Float = 1.0 {
-        didSet {
-            engine.mainMixerNode.outputVolume = masterVolume
-        }
+        didSet { updateAllVolumes() }
     }
-
-    private var fadeTimers: [UUID: Timer] = [:]
-
-    init() {
-        #if os(iOS) || os(tvOS)
+    
+    private let extensions = ["mp3", "wav", "m4a"]
+    private let audioQueue = DispatchQueue(label: "com.educalm.sounds.audio", qos: .userInitiated)
+    
+    init() { setupAudioSessionIfNeeded() }
+    
+    private func setupAudioSessionIfNeeded() {
+        #if os(iOS)
+        let session = AVAudioSession.sharedInstance()
         do {
-            try AVAudioSession.sharedInstance().setCategory(.playback, mode: .default, options: [])
-            try AVAudioSession.sharedInstance().setActive(true)
-        } catch {
-            print("⚠️ Could not set up audio session: \(error)")
-        }
+            try session.setCategory(.playback, mode: .default, options: [.mixWithOthers])
+            try session.setPreferredIOBufferDuration(0.005)
+            try session.setActive(true)
+        } catch { print("AudioSession error:", error) }
         #endif
-
-        loadSounds([
-            ("Rain", "rain.mp3"),
-            ("Birds", "birds.mp3"),
-            ("Fan", "fan.mp3"),
-            ("PowerRangers", "ggpr.mp3"),
-            ("Minecraft", "subwoofer.mp3"),
-            ("Thunder", "thunder.mp3")
-        ])
-
-        engine.prepare()
-        do {
-            try engine.start()
-            engine.mainMixerNode.outputVolume = masterVolume
-        } catch {
-            print("⚠️ Audio engine failed to start: \(error)")
-        }
     }
-
-    private func loadSounds(_ files: [(String, String)]) {
-        for (name, fileName) in files {
-            if let url = Bundle.main.url(forResource: fileName, withExtension: nil) {
-                do {
-                    let audioFile = try AVAudioFile(forReading: url)
-
-                    // create a PCM buffer to loop
-                    let processingFormat = audioFile.processingFormat
-                    let frameCount = AVAudioFrameCount(audioFile.length)
-                    let buffer = AVAudioPCMBuffer(pcmFormat: processingFormat, frameCapacity: frameCount)
-                    try audioFile.read(into: buffer!)
-                    buffer?.frameLength = frameCount
-
-                    let node = AVAudioPlayerNode()
-                    engine.attach(node)
-                    engine.connect(node, to: engine.mainMixerNode, format: processingFormat)
-
-                    let sound = AmbientSound(name: name, fileName: fileName, volume: 0.7, playerNode: node, audioFile: audioFile, pcmBuffer: buffer)
-                    sounds.append(sound)
-                } catch {
-                    print("⚠️ Failed to load \(fileName): \(error)")
-                }
-            } else {
-                print("⚠️ File \(fileName) not found in bundle")
+    
+    private func urlForSound(_ filename: String) -> URL? {
+        for ext in extensions {
+            if let url = Bundle.main.url(forResource: filename, withExtension: ext) { return url }
+        }
+        return nil
+    }
+    
+    private func ensurePlayerExists(for index: Int, completion: @escaping (AVAudioPlayer?) -> Void) {
+        let sound = sounds[index]
+        let id = sound.id
+        if let player = players[id] { completion(player); return }
+        
+        audioQueue.async { [weak self] in
+            guard let self = self else { completion(nil); return }
+            guard let url = self.urlForSound(sound.filename) else {
+                DispatchQueue.main.async { completion(nil) }
+                return
             }
-        }
-    }
-
-    func play(_ sound: AmbientSound) {
-        guard let buffer = sound.pcmBuffer else { return }
-        let node = sound.playerNode
-
-        stopFade(for: sound)
-
-        if !node.isPlaying {
-            node.volume = sound.volume
-            node.scheduleBuffer(buffer, at: nil, options: .loops, completionHandler: nil)
-            node.play()
-
-            DispatchQueue.main.async {
-                withAnimation(.easeInOut(duration: 0.25)) {
-                    sound.isPlaying = true
-                }
-            }
-        }
-    }
-
-    func stop(_ sound: AmbientSound, fadeDuration: TimeInterval = 1.5) {
-        guard sound.playerNode.isPlaying else {
-            DispatchQueue.main.async {
-                withAnimation(.easeInOut(duration: 0.25)) {
-                    sound.isPlaying = false
-                }
-            }
-            return
-        }
-        startFadeOut(for: sound, duration: fadeDuration)
-    }
-
-    private func startFadeOut(for sound: AmbientSound, duration: TimeInterval) {
-        stopFade(for: sound)
-
-        let node = sound.playerNode
-        let startVolume = node.volume
-        let steps = max(1, Int(duration * 60.0))
-        var currentStep = 0
-
-        let timer = Timer(timeInterval: duration / Double(steps), repeats: true) { [weak self] t in
-            guard let self = self else { t.invalidate(); return }
-            currentStep += 1
-            let progress = Float(currentStep) / Float(steps)
-            node.volume = max(0.0, startVolume * (1.0 - progress))
-
-            if currentStep >= steps {
-                t.invalidate()
-                node.stop()
-                node.volume = sound.volume
-
+            do {
+                let player = try AVAudioPlayer(contentsOf: url)
+                player.numberOfLoops = -1
+                player.volume = sound.volume * self.masterVolume
+                player.prepareToPlay()
                 DispatchQueue.main.async {
-                    withAnimation(.easeInOut(duration: 0.25)) {
-                        sound.isPlaying = false
-                    }
-                    self.fadeTimers[sound.id] = nil
+                    self.players[id] = player
+                    completion(player)
                 }
-            }
-        }
-
-        RunLoop.main.add(timer, forMode: .common)
-        DispatchQueue.main.async {
-            self.fadeTimers[sound.id] = timer
+            } catch { DispatchQueue.main.async { completion(nil) } }
         }
     }
-
-    private func stopFade(for sound: AmbientSound) {
-        DispatchQueue.main.async {
-            if let timer = self.fadeTimers[sound.id] {
-                timer.invalidate()
-                self.fadeTimers[sound.id] = nil
-                sound.playerNode.volume = sound.volume
+    
+    func toggle(_ sound: Sound) {
+        guard let index = sounds.firstIndex(of: sound) else { return }
+        let id = sounds[index].id
+        let wantPlaying = !sounds[index].isPlaying
+        
+        withAnimation(.easeInOut(duration: 0.3)) { sounds[index].isPlaying = wantPlaying }
+        
+        if wantPlaying {
+            ensurePlayerExists(for: index) { [weak self] player in
+                guard let self = self, let p = player else { return }
+                p.volume = self.sounds[index].volume * self.masterVolume
+                p.currentTime = 0
+                p.play()
             }
+        } else { players[id]?.pause() }
+    }
+    
+    func setVolume(for sound: Sound, volume: Float) {
+        guard let index = sounds.firstIndex(of: sound) else { return }
+        let clamped = max(0, min(1, volume))
+        sounds[index].volume = clamped
+        if let player = players[sound.id] { player.volume = clamped * masterVolume }
+    }
+    
+    private func updateAllVolumes() {
+        for i in sounds.indices {
+            let id = sounds[i].id
+            if let p = players[id] { p.volume = sounds[i].volume * masterVolume }
         }
     }
-
-    func updateVolume(_ sound: AmbientSound, volume: Float) {
-        DispatchQueue.main.async {
-            sound.volume = volume
-            if sound.playerNode.isPlaying {
-                sound.playerNode.volume = volume
-            }
+    
+    func stopAll() {
+        for id in players.keys {
+            players[id]?.pause()
+            players[id]?.currentTime = 0
         }
-    }
-
-    func stopAll(fadeDuration: TimeInterval = 1.5) {
-        for s in sounds where s.playerNode.isPlaying {
-            stop(s, fadeDuration: fadeDuration)
-        }
+        for i in sounds.indices { sounds[i].isPlaying = false }
     }
 }
+
+// MARK: - Views
 
 struct SoundsTab: View {
-    @StateObject private var manager = AmbientSoundManager()
-    @State var colorfulPreset = ColorfulPreset.appleIntelligence
-    @State private var activeSound: UUID? = nil
-
-    // tile sizing used for layout math
-    private let tileWidth: CGFloat = 160
-    private let tileHeight: CGFloat = 140
-    private let horizontalPadding: CGFloat = 24
-    private let spacing: CGFloat = 20
-
-    var body: some View {
-        GeometryReader { proxy in
-            ZStack {
-                // Background
-                ColorfulView(color: $colorfulPreset)
-                    .ignoresSafeArea()
-                    .opacity(0.4)
-                    .zIndex(0)
-
-                // Centered grid:
-                // compute how many columns fit and build a fixed grid width so we can center it horizontally
-                let availableWidth = max(0, proxy.size.width - horizontalPadding * 2)
-                let columnsThatFit = max(1, Int((availableWidth + spacing) / (tileWidth + spacing)))
-                let totalGridWidth = CGFloat(columnsThatFit) * tileWidth + CGFloat(columnsThatFit - 1) * spacing
-
-                // Vertical centering: VStack with spacers and minHeight set to proxy.height
-                ScrollView {
-                    VStack {
-                        Spacer(minLength: 0)
-
-                        HStack {
-                            Spacer(minLength: 0)
-
-                            LazyVGrid(columns: Array(repeating: GridItem(.fixed(tileWidth), spacing: spacing, alignment: .center), count: columnsThatFit),
-                                      alignment: .center,
-                                      spacing: spacing) {
-                                ForEach(manager.sounds) { sound in
-                                    SoundItemViewFixed(sound: sound, manager: manager, activeSound: $activeSound, tileHeight: tileHeight, sliderHeight: 34)
-                                        .frame(width: tileWidth, height: tileHeight)
-                                }
-                            }
-                            .frame(width: min(totalGridWidth, proxy.size.width - 16)) // keep some breathing room on very small widths
-
-                            Spacer(minLength: 0)
-                        }
-                        .padding(.horizontal, horizontalPadding)
-
-                        Spacer(minLength: 0)
-                    }
-                    .frame(minHeight: proxy.size.height)
-                }
-                .zIndex(0)
-
-                // Master volume overlay centered horizontally at the bottom,
-                // and lifted up a bit to avoid overlapping the center-bottom grid tile.
-                VStack {
-                    Spacer()
-                    HStack {
-                        Spacer(minLength: 0)
-
-                        MasterVolumeView(masterVolume: $manager.masterVolume)
-                            // lift above bottom by safe area + extra padding so it doesn't overlap center tile
-                            .padding(.bottom, max(proxy.safeAreaInsets.bottom, 8) + 56)
-                            .zIndex(2)
-
-                        Spacer(minLength: 0)
-                    }
-                }
-            }
-            .navigationTitle("Relaxing Sounds")
-        }
+    @EnvironmentObject private var audioManager: SoundsAudioManager
+    @Environment(\.horizontalSizeClass) private var sizeClass
+    
+    @State var colourfulPreset = ColorfulPreset.appleIntelligence
+    
+    private var columns: [GridItem] {
+        #if os(iOS)
+        let count = sizeClass == .regular ? 4 : 3
+        #else
+        let screenWidth = NSScreen.main?.frame.width ?? 900
+        let count = screenWidth > 900 ? 4 : 3
+        #endif
+        return Array(repeating: GridItem(.flexible(), spacing: 48), count: count)
     }
-}
-
-struct MasterVolumeView: View {
-    @Binding var masterVolume: Float
-
-    var body: some View {
-        HStack(spacing: 8) {
-            Image(systemName: "speaker.wave.2.fill")
-                .foregroundColor(.primary)
-            Slider(value: Binding(get: {
-                Double(masterVolume)
-            }, set: { newVal in
-                masterVolume = Float(newVal)
-            }), in: 0...1)
-            .frame(width: 160)
-        }
-        .padding(.horizontal, 12)
-        .padding(.vertical, 10)
-        .background(materialBackground())
-        .clipShape(RoundedRectangle(cornerRadius: 12, style: .continuous))
-        .shadow(color: Color.black.opacity(0.15), radius: 6, x: 0, y: 3)
-        .frame(maxWidth: 280)
-    }
-
-    @ViewBuilder
-    private func materialBackground() -> some View {
-        if #available(iOS 15.0, macOS 12.0, tvOS 15.0, watchOS 9.0, *) {
-            Rectangle().fill(.ultraThinMaterial)
-        } else {
-            Rectangle().fill(Color.black.opacity(0.22))
-        }
-    }
-}
-
-struct SoundItemViewFixed: View {
-    @ObservedObject var sound: AmbientSound
-    @ObservedObject var manager: AmbientSoundManager
-    @Binding var activeSound: UUID?
-
-    let tileHeight: CGFloat
-    let sliderHeight: CGFloat
-
+    
     var body: some View {
         ZStack {
-            // Optional card background (transparent so it doesn't clash with ColorfulView)
-            RoundedRectangle(cornerRadius: 12, style: .continuous)
-                .fill(Color.clear)
-                .frame(height: tileHeight)
-
-            VStack(spacing: 8) {
-                Spacer(minLength: 8)
-
-                Button(action: togglePlay) {
-                    ZStack {
-                        Circle()
-                            .fill(sound.isPlaying ? Color.blue.opacity(0.85) : Color.gray.opacity(0.3))
-                            .frame(width: 80, height: 80)
-
-                        Image(systemName: iconForSound(sound.name))
-                            .font(.system(size: 28))
-                            .foregroundColor(.white)
+            ColorfulView(color: $colourfulPreset)
+                .opacity(0.4)
+                .ignoresSafeArea()
+            NavigationStack {
+                ScrollView {
+                    LazyVGrid(columns: columns, spacing: 48) {
+                        ForEach(audioManager.sounds) { sound in
+                            SoundButton(sound: sound)
+                                .environmentObject(audioManager)
+                        }
                     }
+                    .padding(.horizontal, 48)
+                    .padding(.top, 150)
+                    
+                    // Master Volume Control
+                    HStack(spacing: 14) {
+                        Image(systemName: "speaker.fill")
+                            .font(.system(size: 18, weight: .semibold))
+                            .foregroundColor(.white.opacity(0.95))
+                        Slider(value: Binding(
+                            get: { Double(audioManager.masterVolume) },
+                            set: { newValue in audioManager.masterVolume = Float(newValue) }
+                        ), in: 0...1)
+                        .accentColor(Color(red: 0.8, green: 0.2, blue: 0.4))
+                        .frame(maxWidth: 420)
+                        Button { audioManager.stopAll() } label: {
+                            Image(systemName: "stop.fill")
+                                .foregroundColor(.white.opacity(0.85))
+                        }
+                        .buttonStyle(PlainButtonStyle())
+                    }
+                    .padding()
+                    .background(
+                        Capsule()
+                            .fill(Color.black.opacity(0.3))
+                            .shadow(color: Color.black.opacity(0.4), radius: 8, x: 0, y: 6)
+                    )
+                    .padding(.bottom, 48)
                 }
-                .buttonStyle(PlainButtonStyle())
-
-                Spacer(minLength: 8)
-
-                // Reserved slider area: fixed height so the icon never shifts.
-                ZStack {
-                    Color.clear
-                    Slider(value: Binding(get: {
-                        Double(sound.volume)
-                    }, set: { newVal in
-                        manager.updateVolume(sound, volume: Float(newVal))
-                    }), in: 0...1)
-                    .frame(height: sliderHeight)
-                    .padding(.horizontal, 8)
-                    .opacity(sound.isPlaying ? 1.0 : 0.0)
-                    .animation(.easeInOut(duration: 0.25), value: sound.isPlaying)
-                    .disabled(!sound.isPlaying)
-                }
-                .frame(height: sliderHeight)
+                .scrollContentBackground(.hidden)
+                .background(Color.clear)
             }
-            .frame(height: tileHeight)
-            .contentShape(Rectangle())
-            .onTapGesture {
-                withAnimation(.easeInOut(duration: 0.2)) {
-                    activeSound = (activeSound == sound.id) ? nil : sound.id
-                }
-            }
-        }
-    }
-
-    private func togglePlay() {
-        if sound.isPlaying {
-            manager.stop(sound)
-        } else {
-            manager.play(sound)
-            withAnimation(.easeInOut(duration: 0.2)) {
-                activeSound = sound.id
-            }
-        }
-    }
-
-    private func iconForSound(_ name: String) -> String {
-        switch name.lowercased() {
-        case "rain": return "cloud.rain.fill"
-        case "birds": return "bird.fill"
-        case "thunder": return "cloud.bolt.rain.fill"
-        case "powerrangers": return "figure.cooldown"
-        case "minecraft": return "gamecontroller.fill"
-        case "fan": return "fanblades.fill"
-        default: return "waveform"
         }
     }
 }
 
-struct SoundsTab_Previews: PreviewProvider {
-    static var previews: some View {
-        SoundsTab()
+// MARK: - Button
+
+private struct SoundButton: View {
+    @EnvironmentObject var audioManager: SoundsAudioManager
+    let sound: Sound
+    
+    private let highlightColor = Color(red: 0.8, green: 0.2, blue: 0.4)
+    
+    var body: some View {
+        VStack(spacing: 8) {
+            Button {
+                withAnimation(.easeInOut(duration: 0.3)) { audioManager.toggle(sound) }
+            } label: {
+                ZStack {
+                    Circle()
+                        .fill(sound.isPlaying ? highlightColor : Color.white.opacity(0.15))
+                        .frame(width: 100, height: 100)
+                        .overlay(Circle().stroke(Color.white.opacity(0.06), lineWidth: 1))
+                    Image(systemName: sound.systemImage)
+                        .resizable()
+                        .scaledToFit()
+                        .frame(width: 36, height: 36)
+                        .foregroundColor(.white)
+                        .zIndex(1)
+                }
+            }
+            .buttonStyle(PlainButtonStyle())
+            .scaleEffect(sound.isPlaying ? 1.05 : 1.0)
+            .shadow(color: Color.black.opacity(0.35),
+                    radius: sound.isPlaying ? 10 : 4,
+                    x: 0, y: 6)
+            
+            Slider(value: Binding(
+                get: { Double(sound.volume) },
+                set: { newValue in audioManager.setVolume(for: sound, volume: Float(newValue)) }
+            ), in: 0...1)
+            .frame(width: 100, height: 20)
+            .accentColor(highlightColor)
+            .opacity(sound.isPlaying ? 1.0 : 0.0)
+        }
+        .frame(height: 140)
     }
 }

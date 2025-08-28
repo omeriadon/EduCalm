@@ -13,6 +13,8 @@ struct ContentView: View {
 	@Default(.hasCompletedIntro) var hasCompletedIntro
 	@State private var selectedTab: String = "Home"
 	@State private var showQuestionsSheet = false
+    
+    @StateObject private var audioManager = SoundsAudioManager()
 	
 	var body: some View {
 		TabView(selection: $selectedTab) {
@@ -28,8 +30,9 @@ struct ContentView: View {
 				ChatTab()
 			}
             
-            Tab("Noise", systemImage: "mic.full", value: "Noise") {
+            Tab("Noise", systemImage: "speaker.wave.2", value: "Noise") {
                 SoundsTab()
+                    .environmentObject(audioManager)
             }
 
 			Tab("Questions", systemImage: "questionmark.circle", value: "Questions") {
