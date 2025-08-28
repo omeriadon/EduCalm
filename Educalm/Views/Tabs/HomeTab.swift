@@ -56,6 +56,11 @@ struct HomeTab: View {
 								icon: "hands.and.sparkles",
 								description: "Get help when needed"
 							)
+                            QuickActionCard(
+                                title: "Noise",
+                                icon: "mic.fill",
+                                description: "Calming noise player"
+                            )
 						}
 						.padding()
 					}

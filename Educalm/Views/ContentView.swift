@@ -27,6 +27,10 @@ struct ContentView: View {
 			Tab("Chat", systemImage: "bubble.left.and.bubble.right", value: "Chat") {
 				ChatTab()
 			}
+            
+            Tab("Noise", systemImage: "mic.full", value: "Noise") {
+                SoundsTab()
+            }
 
 			Tab("Questions", systemImage: "questionmark.circle", value: "Questions") {
 				QuestionsTab(showQuestionsSheet: $showQuestionsSheet)
