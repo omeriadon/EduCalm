@@ -3,9 +3,7 @@
 //
 //  Created by Dylan Karunanayake on 25/8/2025.
 //  yay it works
-/// the code is very bad i need to make it better but i dont know how 2 use apple's audio engine
 //
-
 
 import SwiftUI
 import ColorfulX
@@ -13,28 +11,28 @@ import ColorfulX
 import Combine
 import Foundation
 
-// AmbientSound remains an ObservableObject so the UI still updates reactively.
+// AmbientSound is a reference type so changes publish correctly to the UI across platforms
 final class AmbientSound: ObservableObject, Identifiable {
     let id = UUID()
     let name: String
-    let fileURL: URL
+    let fileName: String
     @Published var volume: Float
-    // playerNode, audioFile are created lazily when needed:
-    var playerNode: AVAudioPlayerNode?
+    let playerNode: AVAudioPlayerNode
     var audioFile: AVAudioFile?
-    // UI state:
+    var pcmBuffer: AVAudioPCMBuffer?
     @Published var isPlaying: Bool = false
 
-    // internal flag to track whether we are currently scheduling/looping
-    fileprivate var shouldLoop: Bool = false
-
-    init(name: String, fileURL: URL, volume: Float = 0.7) {
+    init(name: String, fileName: String, volume: Float = 0.5, playerNode: AVAudioPlayerNode, audioFile: AVAudioFile?, pcmBuffer: AVAudioPCMBuffer?) {
         self.name = name
-        self.fileURL = fileURL
+        self.fileName = fileName
         self.volume = volume
+        self.playerNode = playerNode
+        self.audioFile = audioFile
+        self.pcmBuffer = pcmBuffer
     }
 }
 
+// Manager interacts with AVAudioEngine; UI updates are dispatched to main thread where needed.
 class AmbientSoundManager: ObservableObject {
     let engine = AVAudioEngine()
     @Published var sounds: [AmbientSound] = []
@@ -44,11 +42,7 @@ class AmbientSoundManager: ObservableObject {
         }
     }
 
-    // Fade timers remain keyed by sound.id
     private var fadeTimers: [UUID: Timer] = [:]
-
-    // Serial queue for all file I/O and preparation work to avoid blocking the main thread
-    private let loadQueue = DispatchQueue(label: "com.educalm.soundLoadQueue", qos: .userInitiated)
 
     init() {
         #if os(iOS) || os(tvOS)
@@ -60,19 +54,15 @@ class AmbientSoundManager: ObservableObject {
         }
         #endif
 
-        // Discover files in the bundle (fast metadata ops only)
-        let fileList: [(String, String)] = [
+        loadSounds([
             ("Rain", "rain.mp3"),
             ("Birds", "birds.mp3"),
             ("Fan", "fan.mp3"),
             ("PowerRangers", "ggpr.mp3"),
             ("Minecraft", "subwoofer.mp3"),
             ("Thunder", "thunder.mp3")
-        ]
+        ])
 
-        loadAvailableSounds(from: fileList)
-
-        // Prepare and start the engine; this is relatively quick compared to file I/O
         engine.prepare()
         do {
             try engine.start()
@@ -82,95 +72,43 @@ class AmbientSoundManager: ObservableObject {
         }
     }
 
-    // Only create lightweight AmbientSound instances here. No file reads, no buffer allocations.
-    private func loadAvailableSounds(from list: [(String, String)]) {
-        for (name, fileName) in list {
+    private func loadSounds(_ files: [(String, String)]) {
+        for (name, fileName) in files {
             if let url = Bundle.main.url(forResource: fileName, withExtension: nil) {
-                let sound = AmbientSound(name: name, fileURL: url, volume: 0.7)
-                sounds.append(sound)
+                do {
+                    let audioFile = try AVAudioFile(forReading: url)
+
+                    // create a PCM buffer to loop
+                    let processingFormat = audioFile.processingFormat
+                    let frameCount = AVAudioFrameCount(audioFile.length)
+                    let buffer = AVAudioPCMBuffer(pcmFormat: processingFormat, frameCapacity: frameCount)
+                    try audioFile.read(into: buffer!)
+                    buffer?.frameLength = frameCount
+
+                    let node = AVAudioPlayerNode()
+                    engine.attach(node)
+                    engine.connect(node, to: engine.mainMixerNode, format: processingFormat)
+
+                    let sound = AmbientSound(name: name, fileName: fileName, volume: 0.7, playerNode: node, audioFile: audioFile, pcmBuffer: buffer)
+                    sounds.append(sound)
+                } catch {
+                    print("⚠️ Failed to load \(fileName): \(error)")
+                }
             } else {
                 print("⚠️ File \(fileName) not found in bundle")
             }
         }
     }
 
-    // Prepare player node and audio file on demand on the background queue, then call completion on main queue.
-    private func prepareIfNeeded(_ sound: AmbientSound, completion: @escaping (Bool) -> Void) {
-        // If already prepared and node exists, return immediately
-        if sound.playerNode != nil && sound.audioFile != nil {
-            DispatchQueue.main.async { completion(true) }
-            return
-        }
-
-        loadQueue.async { [weak self, weak sound] in
-            guard let self = self, let sound = sound else {
-                DispatchQueue.main.async { completion(false) }
-                return
-            }
-
-            do {
-                let file = try AVAudioFile(forReading: sound.fileURL)
-                // Create player node on main thread while keeping file reading off main thread
-                DispatchQueue.main.async {
-                    // Double-check we didn't already prepare while switching threads
-                    if sound.playerNode == nil {
-                        let node = AVAudioPlayerNode()
-                        sound.playerNode = node
-                        self.engine.attach(node)
-                        // Connect with the file's processing format so pitch/speed are preserved
-                        self.engine.connect(node, to: self.engine.mainMixerNode, format: file.processingFormat)
-                    }
-
-                    sound.audioFile = file
-                    completion(true)
-                }
-            } catch {
-                print("⚠️ Failed to open audio file at \(sound.fileURL): \(error)")
-                DispatchQueue.main.async {
-                    completion(false)
-                }
-            }
-        }
-    }
-
-    // Looped playback using scheduleFile + repeating scheduling in completion handler.
-    // This avoids allocating a full PCM buffer in memory at init.
     func play(_ sound: AmbientSound) {
-        // Stop any fade that might be running for this sound
+        guard let buffer = sound.pcmBuffer else { return }
+        let node = sound.playerNode
+
         stopFade(for: sound)
 
-        // Prepare (lazy-load) then schedule and play
-        prepareIfNeeded(sound) { [weak self, weak sound] ok in
-            guard let self = self, let sound = sound, ok else { return }
-
-            guard let node = sound.playerNode, let file = sound.audioFile else { return }
-
-            // If node is already playing don't re-schedule duplicate playback
-            if node.isPlaying {
-                DispatchQueue.main.async {
-                    withAnimation(.easeInOut(duration: 0.25)) {
-                        sound.isPlaying = true
-                    }
-                }
-                return
-            }
-
-            // Set the node volume from sound.volume before starting
+        if !node.isPlaying {
             node.volume = sound.volume
-            sound.shouldLoop = true
-
-            // Schedule the file once, then in completion schedule again if shouldLoop is still true.
-            func scheduleLoop() {
-                node.scheduleFile(file, at: nil) { [weak self, weak sound] in
-                    guard let sound = sound else { return }
-                    // If user requested stop we won't re-schedule
-                    if sound.shouldLoop {
-                        scheduleLoop()
-                    }
-                }
-            }
-
-            scheduleLoop()
+            node.scheduleBuffer(buffer, at: nil, options: .loops, completionHandler: nil)
             node.play()
 
             DispatchQueue.main.async {
@@ -182,8 +120,7 @@ class AmbientSoundManager: ObservableObject {
     }
 
     func stop(_ sound: AmbientSound, fadeDuration: TimeInterval = 1.5) {
-        guard let node = sound.playerNode else {
-            // Not prepared/playing; just update UI state
+        guard sound.playerNode.isPlaying else {
             DispatchQueue.main.async {
                 withAnimation(.easeInOut(duration: 0.25)) {
                     sound.isPlaying = false
@@ -191,34 +128,13 @@ class AmbientSoundManager: ObservableObject {
             }
             return
         }
-
-        guard node.isPlaying else {
-            DispatchQueue.main.async {
-                withAnimation(.easeInOut(duration: 0.25)) {
-                    sound.isPlaying = false
-                }
-            }
-            return
-        }
-
-        // Mark that we no longer want to loop so scheduling completion won't re-schedule
-        sound.shouldLoop = false
-
         startFadeOut(for: sound, duration: fadeDuration)
     }
 
     private func startFadeOut(for sound: AmbientSound, duration: TimeInterval) {
         stopFade(for: sound)
 
-        guard let node = sound.playerNode else {
-            DispatchQueue.main.async {
-                withAnimation(.easeInOut(duration: 0.25)) {
-                    sound.isPlaying = false
-                }
-            }
-            return
-        }
-
+        let node = sound.playerNode
         let startVolume = node.volume
         let steps = max(1, Int(duration * 60.0))
         var currentStep = 0
@@ -254,7 +170,7 @@ class AmbientSoundManager: ObservableObject {
             if let timer = self.fadeTimers[sound.id] {
                 timer.invalidate()
                 self.fadeTimers[sound.id] = nil
-                sound.playerNode?.volume = sound.volume
+                sound.playerNode.volume = sound.volume
             }
         }
     }
@@ -262,14 +178,14 @@ class AmbientSoundManager: ObservableObject {
     func updateVolume(_ sound: AmbientSound, volume: Float) {
         DispatchQueue.main.async {
             sound.volume = volume
-            if let node = sound.playerNode, node.isPlaying {
-                node.volume = volume
+            if sound.playerNode.isPlaying {
+                sound.playerNode.volume = volume
             }
         }
     }
 
     func stopAll(fadeDuration: TimeInterval = 1.5) {
-        for s in sounds where s.playerNode?.isPlaying == true {
+        for s in sounds where s.playerNode.isPlaying {
             stop(s, fadeDuration: fadeDuration)
         }
     }
@@ -296,10 +212,12 @@ struct SoundsTab: View {
                     .zIndex(0)
 
                 // Centered grid:
+                // compute how many columns fit and build a fixed grid width so we can center it horizontally
                 let availableWidth = max(0, proxy.size.width - horizontalPadding * 2)
                 let columnsThatFit = max(1, Int((availableWidth + spacing) / (tileWidth + spacing)))
                 let totalGridWidth = CGFloat(columnsThatFit) * tileWidth + CGFloat(columnsThatFit - 1) * spacing
 
+                // Vertical centering: VStack with spacers and minHeight set to proxy.height
                 ScrollView {
                     VStack {
                         Spacer(minLength: 0)
@@ -315,7 +233,7 @@ struct SoundsTab: View {
                                         .frame(width: tileWidth, height: tileHeight)
                                 }
                             }
-                            .frame(width: min(totalGridWidth, proxy.size.width - 16))
+                            .frame(width: min(totalGridWidth, proxy.size.width - 16)) // keep some breathing room on very small widths
 
                             Spacer(minLength: 0)
                         }
@@ -327,12 +245,15 @@ struct SoundsTab: View {
                 }
                 .zIndex(0)
 
+                // Master volume overlay centered horizontally at the bottom,
+                // and lifted up a bit to avoid overlapping the center-bottom grid tile.
                 VStack {
                     Spacer()
                     HStack {
                         Spacer(minLength: 0)
 
                         MasterVolumeView(masterVolume: $manager.masterVolume)
+                            // lift above bottom by safe area + extra padding so it doesn't overlap center tile
                             .padding(.bottom, max(proxy.safeAreaInsets.bottom, 8) + 56)
                             .zIndex(2)
 
@@ -387,6 +308,7 @@ struct SoundItemViewFixed: View {
 
     var body: some View {
         ZStack {
+            // Optional card background (transparent so it doesn't clash with ColorfulView)
             RoundedRectangle(cornerRadius: 12, style: .continuous)
                 .fill(Color.clear)
                 .frame(height: tileHeight)
@@ -409,6 +331,7 @@ struct SoundItemViewFixed: View {
 
                 Spacer(minLength: 8)
 
+                // Reserved slider area: fixed height so the icon never shifts.
                 ZStack {
                     Color.clear
                     Slider(value: Binding(get: {
