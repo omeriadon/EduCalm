@@ -1,17 +1,7 @@
-//
-//  SoundsTab.swift
-//  EduCalm
-//
-//  Cross-platform Sounds tab for iOS & macOS
-//  Updated for consistent navigation and background behavior
-//
-
 import SwiftUI
 import AVFoundation
 import Combine
 import ColorfulX
-
-// MARK: - Model
 
 struct Sound: Identifiable, Hashable {
     let id = UUID()
@@ -21,8 +11,6 @@ struct Sound: Identifiable, Hashable {
     var isPlaying: Bool = false
     var volume: Float = 1.0
 }
-
-// MARK: - Audio Manager
 
 final class SoundsAudioManager: ObservableObject {
     @Published private(set) var sounds: [Sound] = [
@@ -92,9 +80,7 @@ final class SoundsAudioManager: ObservableObject {
         guard let index = sounds.firstIndex(of: sound) else { return }
         let id = sounds[index].id
         let wantPlaying = !sounds[index].isPlaying
-        
         withAnimation(.easeInOut(duration: 0.3)) { sounds[index].isPlaying = wantPlaying }
-        
         if wantPlaying {
             ensurePlayerExists(for: index) { [weak self] player in
                 guard let self = self, let p = player else { return }
@@ -128,12 +114,9 @@ final class SoundsAudioManager: ObservableObject {
     }
 }
 
-// MARK: - Views
-
 struct SoundsTab: View {
     @EnvironmentObject private var audioManager: SoundsAudioManager
     @Environment(\.horizontalSizeClass) private var sizeClass
-    
     @State var colourfulPreset = ColorfulPreset.appleIntelligence
     
     private var columns: [GridItem] {
@@ -160,31 +143,40 @@ struct SoundsTab: View {
                         }
                     }
                     .padding(.horizontal, 48)
-                    .padding(.top, 150)
+                    .padding(.top, 120)
                     
-                    // Master Volume Control
                     HStack(spacing: 14) {
                         Image(systemName: "speaker.fill")
                             .font(.system(size: 18, weight: .semibold))
-                            .foregroundColor(.white.opacity(0.95))
+                            .foregroundStyle(.white)
                         Slider(value: Binding(
                             get: { Double(audioManager.masterVolume) },
                             set: { newValue in audioManager.masterVolume = Float(newValue) }
                         ), in: 0...1)
-                        .accentColor(Color(red: 0.8, green: 0.2, blue: 0.4))
+                        .tint(Color.pink)
                         .frame(maxWidth: 420)
-                        Button { audioManager.stopAll() } label: {
-                            Image(systemName: "stop.fill")
-                                .foregroundColor(.white.opacity(0.85))
+                        Button {
+                            audioManager.stopAll()
+                        } label: {
+                            HStack(spacing: 6) {
+                                Image(systemName: "stop.fill")
+                                    .foregroundStyle(.white)
+                                Text("Stop")
+                                    .foregroundStyle(.white)
+                                    .font(.system(size: 16, weight: .semibold))
+                            }
+                            .padding(.horizontal, 16)
+                            .padding(.vertical, 10)
+                            .glassEffect(.clear)
+                            .clipShape(Capsule())
+                            .shadow(color: .black.opacity(0.2), radius: 6, x: 0, y: 3)
                         }
-                        .buttonStyle(PlainButtonStyle())
+                        .buttonStyle(.plain)
                     }
-                    .padding()
-                    .background(
-                        Capsule()
-                            .fill(Color.black.opacity(0.3))
-                            .shadow(color: Color.black.opacity(0.4), radius: 8, x: 0, y: 6)
-                    )
+                    .padding(.horizontal, 24)
+                    .padding(.vertical, 14)
+                    
+                    .glassEffect(.clear)                    .padding(.top, 40)
                     .padding(.bottom, 48)
                 }
                 .scrollContentBackground(.hidden)
@@ -194,46 +186,60 @@ struct SoundsTab: View {
     }
 }
 
-// MARK: - Button
-
 private struct SoundButton: View {
     @EnvironmentObject var audioManager: SoundsAudioManager
     let sound: Sound
-    
-    private let highlightColor = Color(red: 0.8, green: 0.2, blue: 0.4)
+    private let glowColor = Color(red: 0.9, green: 0.25, blue: 0.45)
     
     var body: some View {
-        VStack(spacing: 8) {
+        VStack(spacing: 10) {
             Button {
-                withAnimation(.easeInOut(duration: 0.3)) { audioManager.toggle(sound) }
+                withAnimation(.easeInOut(duration: 0.3)) {
+                    audioManager.toggle(sound)
+                }
             } label: {
                 ZStack {
                     Circle()
-                        .fill(sound.isPlaying ? highlightColor : Color.white.opacity(0.15))
-                        .frame(width: 100, height: 100)
-                        .overlay(Circle().stroke(Color.white.opacity(0.06), lineWidth: 1))
+                        .glassEffect(.clear) // liquid glass
+                        .frame(width: 110, height: 110)
+                        .overlay(
+                            Circle()
+                                .strokeBorder(
+                                    LinearGradient(
+                                        colors: [Color.white.opacity(0.6), Color.white.opacity(0.05)],
+                                        startPoint: .topLeading,
+                                        endPoint: .bottomTrailing
+                                    ),
+                                    lineWidth: 1.4
+                                )
+                        )
+                        .shadow(
+                            color: sound.isPlaying ? glowColor.opacity(0.6) : .black.opacity(0.25),
+                            radius: sound.isPlaying ? 20 : 10,
+                            x: 0, y: 10
+                        )
+                    
                     Image(systemName: sound.systemImage)
                         .resizable()
                         .scaledToFit()
-                        .frame(width: 36, height: 36)
-                        .foregroundColor(.white)
-                        .zIndex(1)
+                        .frame(width: 40, height: 40)
+                        .foregroundStyle(.white)
+                        .shadow(color: .black.opacity(0.5), radius: 6, x: 0, y: 3)
                 }
             }
-            .buttonStyle(PlainButtonStyle())
-            .scaleEffect(sound.isPlaying ? 1.05 : 1.0)
-            .shadow(color: Color.black.opacity(0.35),
-                    radius: sound.isPlaying ? 10 : 4,
-                    x: 0, y: 6)
+            .buttonStyle(.plain)
+            .scaleEffect(sound.isPlaying ? 1.1 : 1.0)
+            .animation(.spring(response: 0.4, dampingFraction: 0.65), value: sound.isPlaying)
             
             Slider(value: Binding(
                 get: { Double(sound.volume) },
                 set: { newValue in audioManager.setVolume(for: sound, volume: Float(newValue)) }
             ), in: 0...1)
-            .frame(width: 100, height: 20)
-            .accentColor(highlightColor)
-            .opacity(sound.isPlaying ? 1.0 : 0.0)
+            .tint(glowColor)
+            .frame(width: 110)
+            .opacity(sound.isPlaying ? 1 : 0)
+            .padding(.top, 6)
         }
-        .frame(height: 140)
+        .frame(height: 160)
     }
 }

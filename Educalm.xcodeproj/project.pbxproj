@@ -17,9 +17,22 @@
 		A7D9194A2E547BBD0076A4DA /* EduCalm.icon */ = {isa = PBXFileReference; lastKnownFileType = folder.iconcomposer.icon; path = EduCalm.icon; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
+/* Begin PBXFileSystemSynchronizedBuildFileExceptionSet section */
+		74A6ECD92E6165DF00EEC99B /* Exceptions for "EduCalm" folder in "EduCalm" target */ = {
+			isa = PBXFileSystemSynchronizedBuildFileExceptionSet;
+			membershipExceptions = (
+				Info.plist,
+			);
+			target = A75202A22E545826005EEF09 /* EduCalm */;
+		};
+/* End PBXFileSystemSynchronizedBuildFileExceptionSet section */
+
 /* Begin PBXFileSystemSynchronizedRootGroup section */
 		A75202A52E545826005EEF09 /* EduCalm */ = {
 			isa = PBXFileSystemSynchronizedRootGroup;
+			exceptions = (
+				74A6ECD92E6165DF00EEC99B /* Exceptions for "EduCalm" folder in "EduCalm" target */,
+			);
 			path = EduCalm;
 			sourceTree = "<group>";
 		};
